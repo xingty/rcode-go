@@ -5,19 +5,17 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"strconv"
 
 	"github.com/xingty/rcode-go/pkg/models"
 )
 
 type IPCClientSocket struct {
-	host string
-	port int
+	addr string
 	conn net.Conn
 }
 
-func NewIPCClientSocket(host string, port int) *IPCClientSocket {
-	return &IPCClientSocket{host: host, port: port, conn: nil}
+func NewIPCClientSocket(addr string) *IPCClientSocket {
+	return &IPCClientSocket{addr: addr, conn: nil}
 }
 
 func (s *IPCClientSocket) Connect(network string) error {
@@ -25,8 +23,7 @@ func (s *IPCClientSocket) Connect(network string) error {
 		return errors.New("already connected")
 	}
 
-	addr := s.host + ":" + strconv.Itoa(s.port)
-	conn, err := net.Dial(network, addr)
+	conn, err := net.Dial(network, s.addr)
 	if err != nil {
 		return errors.New("failed to connect to RPC server")
 	}

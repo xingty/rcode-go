@@ -11,3 +11,5 @@ dist
 .directory
 .Trash-*
 .nfs*
+
+test.go

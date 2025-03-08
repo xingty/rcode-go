@@ -8,14 +8,8 @@ import (
 	"github.com/xingty/rcode-go/pkg/utils"
 )
 
-var COMMANDS map[string]string = map[string]string{
-	"rcode":     "code",
-	"rcursor":   "rcursor",
-	"rwindsurf": "windsurf",
-}
-
 var GCODE_HOME = filepath.Join(os.Getenv("HOME"), ".gcode")
-var GCCODE_CONFIG = filepath.Join(GCODE_HOME, "history")
+var GCCODE_CONFIG = filepath.Join(GCODE_HOME, "gcode")
 var GCODE_KEY_FILE = filepath.Join(GCODE_HOME, "keyfile")
 
 var SUPPORTED_IDE = utils.NewSet("code", "cursor", "windsurf")

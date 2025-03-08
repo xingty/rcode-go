@@ -16,7 +16,8 @@ import (
 )
 
 func connect2IPCServer(ipc_host string, ipc_port int) *ipc.IPCClientSocket {
-	sock := ipc.NewIPCClientSocket(ipc_host, ipc_port)
+	addr := ipc_host + ":" + strconv.Itoa(ipc_port)
+	sock := ipc.NewIPCClientSocket(addr)
 	err := sock.Connect("tcp")
 	if err == nil {
 		return sock
@@ -29,7 +30,7 @@ func connect2IPCServer(ipc_host string, ipc_port int) *ipc.IPCClientSocket {
 	sock.Close()
 
 	for i := 1; i < 10; i++ {
-		sock = ipc.NewIPCClientSocket(ipc_host, ipc_port)
+		sock = ipc.NewIPCClientSocket(addr)
 		err := sock.Connect("tcp")
 		if err == nil {
 			break
@@ -39,7 +40,7 @@ func connect2IPCServer(ipc_host string, ipc_port int) *ipc.IPCClientSocket {
 			panic(err)
 		}
 
-		sock = ipc.NewIPCClientSocket(ipc_host, ipc_port)
+		sock = ipc.NewIPCClientSocket(addr)
 		time.Sleep(100 * time.Millisecond)
 	}
 
