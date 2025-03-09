@@ -43,12 +43,12 @@ func main() {
 	}
 
 	if code.IsRemote(binName) {
-		if len(args) < 1 {
+		if len(args) < 2 {
 			usage()
 			os.Exit(1)
 		}
 
-		dirName := os.Args[0]
+		dirName := args[1]
 		dirName, _ = filepath.Abs(dirName)
 		err := code.RunRemote(binName, dirName, code.MAX_IDLE_TIME)
 		if err != nil {
