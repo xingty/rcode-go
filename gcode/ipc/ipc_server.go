@@ -11,6 +11,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/samber/lo"
 	"github.com/shirou/gopsutil/v3/process"
 	"github.com/xingty/rcode-go/pkg/models"
 	"github.com/xingty/rcode-go/pkg/utils"
@@ -127,11 +128,11 @@ func (s *IPCServerSocket) getSessions() ([]string, []string) {
 	}
 
 	pids, err := process.Pids()
-	pidSet := utils.NewSet(pids...)
 	if err != nil {
-		return activeSessions, inactiveSessions
+		return lo.Keys(curSessions), inactiveSessions
 	}
 
+	pidSet := utils.NewSet(pids...)
 	for sid, session := range curSessions {
 		if pidSet.Has(session.Pid) {
 			activeSessions = append(activeSessions, sid)

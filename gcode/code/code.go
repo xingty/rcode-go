@@ -136,8 +136,8 @@ func IsSocketProcessRunning(sock string, binName string) bool {
 
 func RunLocal(
 	binName string,
-	dirName string,
 	hostname string,
+	dirName string,
 	shortcutName string) error {
 
 	remoteURI := fmt.Sprintf("vscode-remote://ssh-remote+%s%s", hostname, dirName)
@@ -148,7 +148,7 @@ func RunLocal(
 	file := fmt.Sprintf("%s/.gcode/gcode", os.Getenv("HOME"))
 	fs, _ := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer fs.Close()
-	fs.WriteString(fmt.Sprintf("%s,%s%c", shortcutName, remoteURI, os.PathSeparator))
+	fs.WriteString(fmt.Sprintf("%s,%s\n", shortcutName, remoteURI))
 
 	err := exec.Command(binName, "--folder-uri", remoteURI).Run()
 	if err != nil {

@@ -4,4 +4,4 @@ BIN_NAME="gwindsurf"
 CODE_HOME="$(dirname "$(dirname "$(readlink -f "$0")")")"
 CODE_BIN="$CODE_HOME/$BIN_NAME"
 
-CODE_BIN "$BIN_NAME" "$@"
+"$CODE_BIN" "$BIN_NAME" "$@"
