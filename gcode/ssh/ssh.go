@@ -143,6 +143,5 @@ func createSSHArgs(
 
 func Run(ipc_host string, ipc_port int, ssh_args []string) {
 	newArgs := createSSHArgs(ipc_host, ipc_port, ssh_args)
-	fmt.Printf("ssh args: %v\n", newArgs)
 	ipc.StartSSHClient(newArgs)
 }

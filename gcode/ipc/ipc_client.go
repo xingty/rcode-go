@@ -3,7 +3,6 @@ package ipc
 import (
 	"bytes"
 	"errors"
-	"fmt"
 	"net"
 
 	"github.com/xingty/rcode-go/pkg/models"
@@ -40,8 +39,6 @@ func (s *IPCClientSocket) Send(data []byte) error {
 	if data[len(data)-1] != models.DELIMITER {
 		data = append(data, models.DELIMITER)
 	}
-
-	fmt.Println(data)
 
 	_, err := s.conn.Write(data)
 	return err
