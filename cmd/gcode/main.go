@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/xingty/rcode-go/gcode/code"
 	"github.com/xingty/rcode-go/gcode/config"
@@ -48,6 +49,7 @@ func main() {
 		}
 
 		dirName := os.Args[0]
+		dirName, _ = filepath.Abs(dirName)
 		err := code.RunRemote(binName, dirName, code.MAX_IDLE_TIME)
 		if err != nil {
 			panic(err)
