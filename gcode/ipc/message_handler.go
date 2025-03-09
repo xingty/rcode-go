@@ -114,7 +114,7 @@ func (h *MessageHandler) OpenIDE(params *models.OpenIDEParams) (string, error) {
 		return "", fmt.Errorf("invalid sid")
 	}
 
-	fmt.Printf("pid: %d, sid: %s, hostname: %s\n", session.Pid, session.Sid, session.Hostname)
+	fmt.Printf("bin: %s, path: %s, hostname: %s\n", params.Bin, params.Path, session.Hostname)
 
 	binName := params.Bin
 	hostname := session.Hostname
