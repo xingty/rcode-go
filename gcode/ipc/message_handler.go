@@ -65,17 +65,29 @@ func (h *MessageHandler) HandleMessage(rawData []byte) (any, error) {
 	return nil, fmt.Errorf("unknown method: %s", message.Method)
 }
 
+func doValidation(keyfile string, val string) error {
+	key, err := os.ReadFile(keyfile)
+	if err != nil {
+		return err
+	}
+
+	if val != string(key) {
+		return fmt.Errorf("invalid key")
+	}
+
+	return nil
+}
+
 func (h *MessageHandler) NewSession(params *models.SessionParams) (models.SessionData, error) {
 	sid := uuid.New().String()
 	skey := uuid.New().String()
 
-	key, err := os.ReadFile(config.GCODE_KEY_FILE)
+	err := doValidation(config.GCODE_KEY_FILE, params.Keyfile)
 	if err != nil {
-		return models.SessionData{}, err
-	}
-
-	if params.Keyfile != string(key) {
-		return models.SessionData{}, fmt.Errorf("invalid key")
+		err := doValidation(config.RSSH_KEY_FILE, params.Keyfile)
+		if err != nil {
+			return models.SessionData{}, err
+		}
 	}
 
 	data := models.SessionData{

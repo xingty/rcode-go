@@ -132,7 +132,7 @@ func createSSHArgs(
 		buf = append(buf, "-t")
 	}
 
-	sock := fmt.Sprintf("/tmp/gssh-ipc-%s.sock", s.Sid)
+	sock := fmt.Sprintf("/tmp/rssh-ipc-%s.sock", s.Sid)
 	tunnel := fmt.Sprintf("%s:%s:%d", sock, host, port)
 	buf = append(buf, "-R", tunnel)
 	buf = append(buf, post...)
@@ -142,9 +142,6 @@ func createSSHArgs(
 }
 
 func Run(ipc_host string, ipc_port int, ssh_args []string) {
-	println("starting ipc server...")
-	println("starting ssh client...")
-
 	newArgs := createSSHArgs(ipc_host, ipc_port, ssh_args)
 	fmt.Printf("ssh args: %v\n", newArgs)
 	ipc.StartSSHClient(newArgs)

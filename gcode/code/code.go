@@ -9,9 +9,9 @@ import (
 	"path/filepath"
 	"sort"
 	"strings"
-	"syscall"
 	"time"
 
+	"github.com/djherbis/times"
 	"github.com/xingty/rcode-go/gcode/config"
 	"github.com/xingty/rcode-go/gcode/ipc"
 	"github.com/xingty/rcode-go/pkg/models"
@@ -104,10 +104,10 @@ func NextOpenSocket(list []FileInfo, binName string) (string, error) {
 func SortByAccessTime(paths []string) []FileInfo {
 	list := make([]FileInfo, len(paths))
 	for i, path := range paths {
-		fp, _ := os.Stat(path)
+		fp, _ := times.Stat(path)
 		list[i] = FileInfo{
 			Path:  path,
-			Atime: fp.Sys().(*syscall.Stat_t).Atim.Sec,
+			Atime: int64(fp.AccessTime().Unix()),
 		}
 	}
 
@@ -189,8 +189,8 @@ func RunShortcut(binName string, shortcutName string) error {
 		panic(err)
 	}
 
-	lines := strings.Split(string(content), "\n")
-	for _, line := range lines {
+	lines := strings.SplitSeq(string(content), "\n")
+	for line := range lines {
 		segs := strings.Split(line, ",")
 		if shortcutName == strings.TrimSpace(segs[0]) {
 			remoteURI := strings.TrimSpace(segs[len(segs)-1])

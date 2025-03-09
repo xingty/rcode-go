@@ -11,6 +11,7 @@ import (
 var GCODE_HOME = filepath.Join(os.Getenv("HOME"), ".gcode")
 var GCCODE_CONFIG = filepath.Join(GCODE_HOME, "gcode")
 var GCODE_KEY_FILE = filepath.Join(GCODE_HOME, "keyfile")
+var RSSH_KEY_FILE = filepath.Join(os.Getenv("HOME"), ".rssh", "keyfile")
 
 var SUPPORTED_IDE = utils.NewSet("code", "cursor", "windsurf")
 
