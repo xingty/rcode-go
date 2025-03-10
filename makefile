@@ -37,14 +37,17 @@ build:
 build-one:
 	@mkdir -p $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin
 	
+	@# Set executable extension based on platform
+	$(eval EXE_SUFFIX := $(if $(filter windows,$(PLATFORM)),.exe,))
+	
 	@# Build gssh
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin/gssh ./cmd/gssh
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin/gssh$(EXE_SUFFIX) ./cmd/gssh
 	
 	@# Build gssh-ipc
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin/gssh-ipc ./cmd/ipc
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin/gssh-ipc$(EXE_SUFFIX) ./cmd/ipc
 	
 	@# Build gcode
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)_$(ARCH)/gcode ./cmd/gcode
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)_$(ARCH)/gcode$(EXE_SUFFIX) ./cmd/gcode
 	
 	@# Copy platform-specific scripts
 	@if [ "$(PLATFORM)" = "windows" ]; then \
@@ -57,7 +60,7 @@ build-one:
 # Clean build artifacts
 .PHONY: clean
 clean:
-	rm -rf $(DIST_DIR)
+	rm -r $(DIST_DIR)
 
 # Help target
 .PHONY: help
