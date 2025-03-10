@@ -35,26 +35,26 @@ build:
 # Build for a specific platform and architecture
 .PHONY: build-one
 build-one:
-	@mkdir -p $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin
+	@mkdir -p $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin
 	
 	@# Set executable extension based on platform
 	$(eval EXE_SUFFIX := $(if $(filter windows,$(PLATFORM)),.exe,))
 	
 	@# Build gssh
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin/gssh$(EXE_SUFFIX) ./cmd/gssh
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh$(EXE_SUFFIX) ./cmd/gssh
 	
 	@# Build gssh-ipc
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin/gssh-ipc$(EXE_SUFFIX) ./cmd/ipc
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh-ipc$(EXE_SUFFIX) ./cmd/ipc
 	
 	@# Build gcode
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)_$(ARCH)/gcode$(EXE_SUFFIX) ./cmd/gcode
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/gcode$(EXE_SUFFIX) ./cmd/gcode
 	
 	@# Copy platform-specific scripts
 	@if [ "$(PLATFORM)" = "windows" ]; then \
-		cp cmd/gcode/bat/*.bat $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin/ 2>/dev/null || true; \
+		cp cmd/gcode/bat/*.bat $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/ 2>/dev/null || true; \
 	else \
-		cp cmd/gcode/sh/* $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin/ ; \
-		chmod +x $(DIST_DIR)/$(PLATFORM)_$(ARCH)/bin/* 2>/dev/null || true; \
+		cp cmd/gcode/sh/* $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/ ; \
+		chmod +x $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/* 2>/dev/null || true; \
 	fi
 
 # Clean build artifacts
