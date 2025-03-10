@@ -42,7 +42,7 @@ func GetCliPath(binName string) (string, error) {
 		binPath = "vscode"
 	}
 
-	homeDir := os.Getenv("HOME")
+	homeDir, _ := os.UserHomeDir()
 	codePath := fmt.Sprintf("%s/.%s-server/cli/servers", homeDir, binPath)
 	servers, err := filepath.Glob(codePath + "/Stable-*")
 	if err == nil && len(servers) > 0 {
@@ -141,19 +141,21 @@ func RunLocal(
 	dirName string,
 	shortcutName string) error {
 
+	home, _ := os.UserHomeDir()
 	if strings.HasPrefix(dirName, "~/") {
-		cfgFile := os.Getenv("HOME") + "/.ssh/config"
+
+		cfgFile := filepath.Join(home, "/.ssh/config")
 		config := sshconf.NewSSHConfig(cfgFile)
 		host := config.GetHost(hostname)
 		if host == nil {
 			return errors.New("couldn't expand user home directory")
 		}
 
-		dirName = "/home" + host.GetUser("root") + dirName[1:]
+		dirName = "/home/" + host.GetUser("root") + dirName[1:]
 	}
 
 	remoteURI := fmt.Sprintf("vscode-remote://ssh-remote+%s%s", hostname, dirName)
-	file := fmt.Sprintf("%s/.gcode/gcode", os.Getenv("HOME"))
+	file := filepath.Join(home, ".gcode", "gcode")
 	fs, _ := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer fs.Close()
 	fs.WriteString(fmt.Sprintf("%s,%s\n", shortcutName, remoteURI))
@@ -167,7 +169,7 @@ func RunLocal(
 }
 
 func RunLatest(binName string) error {
-	recordFile := fmt.Sprintf("%s/.gcode/gcode", os.Getenv("HOME"))
+	recordFile := fmt.Sprintf("%s/.gcode/gcode", config.HOME)
 	content, err := os.ReadFile(recordFile)
 	if err != nil {
 		panic(err)
@@ -191,7 +193,7 @@ func RunLatest(binName string) error {
 }
 
 func RunShortcut(binName string, shortcutName string) error {
-	recordFile := fmt.Sprintf("%s/.gcode/gcode", os.Getenv("HOME"))
+	recordFile := fmt.Sprintf("%s/.gcode/gcode", config.HOME)
 	content, err := os.ReadFile(recordFile)
 	if err != nil {
 		panic(err)

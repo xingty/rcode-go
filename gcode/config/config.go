@@ -8,10 +8,12 @@ import (
 	"github.com/xingty/rcode-go/pkg/utils"
 )
 
-var GCODE_HOME = filepath.Join(os.Getenv("HOME"), ".gcode")
+var HOME, _ = os.UserHomeDir()
+
+var GCODE_HOME = filepath.Join(HOME, ".gcode")
 var GCCODE_CONFIG = filepath.Join(GCODE_HOME, "gcode")
 var GCODE_KEY_FILE = filepath.Join(GCODE_HOME, "keyfile")
-var RSSH_KEY_FILE = filepath.Join(os.Getenv("HOME"), ".rssh", "keyfile")
+var RSSH_KEY_FILE = filepath.Join(HOME, ".rssh", "keyfile")
 
 var SUPPORTED_IDE = utils.NewSet("code", "cursor", "windsurf")
 
