@@ -1,0 +1,49 @@
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Get version
+        id: get_version
+        uses: battila7/get-version-action@v2
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21' 
+
+      - name: Build binaries
+        run: |
+          make build
+
+      - name: Archive artifacts
+        run: |
+          cd dist
+          for dir in */ ; do
+            dir_name="${dir%/}"
+            mv "$dir_name" "gcode"
+            tar -cvzf "gcode-${{ steps.get_version.outputs.version }}-${dir_name}.tar.gz" "gcode"
+            rm -r gcode
+          done
+          cd ..
+
+      - name: Upload Release Assets
+        uses: svenstaro/upload-release-action@v2
+        with:
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          file: dist/*.tar.gz
+          tag: ${{ github.ref }}
+          overwrite: true
