@@ -38,6 +38,7 @@ jobs:
             tar -cvzf "gcode-${{ steps.get_version.outputs.version }}-${dir_name}.tar.gz" "gcode"
             rm -r gcode
           done
+          ls -l
           cd ..
 
       - name: Upload Release Assets
