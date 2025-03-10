@@ -50,9 +50,12 @@ func connect2IPCServer(ipc_host string, ipc_port int) *ipc.IPCClientSocket {
 func createSession(sock *ipc.IPCClientSocket, hostname string) models.SessionData {
 	defer sock.Close()
 
-	data, err := os.ReadFile(config.GCODE_KEY_FILE)
+	data, err := os.ReadFile(config.RSSH_KEY_FILE)
 	if err != nil {
-		panic(err)
+		data, err = os.ReadFile(config.GCODE_KEY_FILE)
+		if err != nil {
+			panic(err)
+		}
 	}
 
 	session := models.SessionPayload[models.SessionParams]{
