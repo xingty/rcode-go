@@ -15,6 +15,7 @@ import (
 	"github.com/xingty/rcode-go/gcode/config"
 	"github.com/xingty/rcode-go/gcode/ipc"
 	"github.com/xingty/rcode-go/pkg/models"
+	"github.com/xingty/rcode-go/pkg/utils/sshconf"
 )
 
 const MAX_IDLE_TIME = 4 * 60 * 60
@@ -140,11 +141,18 @@ func RunLocal(
 	dirName string,
 	shortcutName string) error {
 
-	remoteURI := fmt.Sprintf("vscode-remote://ssh-remote+%s%s", hostname, dirName)
 	if strings.HasPrefix(dirName, "~/") {
-		println(remoteURI)
+		cfgFile := os.Getenv("HOME") + "/.ssh/config"
+		config := sshconf.NewSSHConfig(cfgFile)
+		host := config.GetHost(hostname)
+		if host == nil {
+			return errors.New("couldn't expand user home directory")
+		}
+
+		dirName = "/home" + host.GetUser("root") + dirName[1:]
 	}
 
+	remoteURI := fmt.Sprintf("vscode-remote://ssh-remote+%s%s", hostname, dirName)
 	file := fmt.Sprintf("%s/.gcode/gcode", os.Getenv("HOME"))
 	fs, _ := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
 	defer fs.Close()

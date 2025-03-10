@@ -88,8 +88,6 @@ func main() {
 	}
 
 	if len(commands) >= 2 {
-		fmt.Printf("commands: %v\n", commands)
-		fmt.Printf("shortcutName: %s\n", shortcutName)
 		hostname := commands[0]
 		dirName := commands[1]
 
