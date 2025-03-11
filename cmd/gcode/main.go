@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/xingty/rcode-go/gcode/code"
 	"github.com/xingty/rcode-go/gcode/config"
@@ -42,28 +43,6 @@ func main() {
 		os.Exit(1)
 	}
 
-	isRemote, err := code.IsRemote(binName)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-
-	if isRemote {
-		if len(args) < 2 {
-			usage()
-			os.Exit(1)
-		}
-
-		dirName := args[1]
-		dirName, _ = filepath.Abs(dirName)
-		err := code.RunRemote(binName, dirName, code.MAX_IDLE_TIME)
-		if err != nil {
-			panic(err)
-		}
-
-		os.Exit(0)
-	}
-
 	args = args[1:]
 	if len(args) == 0 {
 		usage()
@@ -73,6 +52,7 @@ func main() {
 	isLatest := false
 	openShortcut := false
 	shortcutName := "latest"
+	help := false
 	commands := make([]string, 0)
 	for i, arg := range args {
 		if arg == "-l" {
@@ -88,9 +68,38 @@ func main() {
 				shortcutName = args[i+1]
 				i += 1
 			}
-		} else {
+		} else if arg == "-h" || arg == "--help" {
+			help = true
+		} else if !strings.HasPrefix(arg, "-") {
 			commands = append(commands, arg)
 		}
+	}
+
+	if help {
+		usage()
+		os.Exit(0)
+	}
+
+	isRemote, err := code.IsRemote(binName)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	if isRemote {
+		if len(commands) == 0 {
+			usage()
+			os.Exit(1)
+		}
+
+		dirName := commands[0]
+		dirName, _ = filepath.Abs(dirName)
+		err := code.RunRemote(binName, dirName, code.MAX_IDLE_TIME)
+		if err != nil {
+			panic(err)
+		}
+
+		os.Exit(0)
 	}
 
 	if len(commands) >= 2 {
