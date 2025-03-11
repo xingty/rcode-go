@@ -93,14 +93,6 @@ print_status "Found latest release: $TAG_NAME"
 
 # Find the tar.gz asset URL for this platform and architecture
 FILE_PATTERN="gcode-$TAG_NAME-$PLATFORM-$ARCH.tar.gz"
-# if [ "$TAG_NAME" == "v0.0.1" ]; then
-#     # Handle version format variations if needed
-#     FILE_PATTERN="gcode-$TAG_NAME-$PLATFORM-$ARCH.tar.gz"
-# else
-#     # Remove 'v' prefix if needed for filename pattern
-#     VERSION="${TAG_NAME#v}"
-#     FILE_PATTERN="gcode-$TAG_NAME-$PLATFORM-$ARCH.tar.gz"
-# fi
 
 print_status "Looking for file matching pattern: $FILE_PATTERN"
 
