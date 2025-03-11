@@ -59,20 +59,21 @@ func GetCliPath(binName string) (string, error) {
 		return cli, nil
 	}
 
-	return "", os.ErrNotExist
+	err = fmt.Errorf("can't find .%s-server at home dir. please install it fist", binName)
+	return "", err
 }
 
-func IsRemote(binName string) bool {
+func IsRemote(binName string) (bool, error) {
 	if !config.SUPPORTED_IDE.Has(binName) {
-		return false
+		return false, nil
 	}
 
 	if os.Getenv("SSH_CLIENT") == "" {
-		return false
+		return false, nil
 	}
 
 	_, err := GetCliPath(binName)
-	return err == nil
+	return err == nil, err
 }
 
 func GetIpcSocket(binName string) (string, error) {

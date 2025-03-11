@@ -42,7 +42,13 @@ func main() {
 		os.Exit(1)
 	}
 
-	if code.IsRemote(binName) {
+	isRemote, err := code.IsRemote(binName)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
+	}
+
+	if isRemote {
 		if len(args) < 2 {
 			usage()
 			os.Exit(1)
