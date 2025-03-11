@@ -46,11 +46,11 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
    To install or update nvm, you should run the install script. To do that, you may either download and run the script manually, or use the following cURL or Wget command:
 
    ```shell
-   curl -o- https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/master/install.sh | bash
+   curl -o- https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.sh | bash
    ```
 
    ```shell
-   wget -qO- https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/master/install.sh | bash
+   wget -qO- https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.sh | bash
    ```
 
 
