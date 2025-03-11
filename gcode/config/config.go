@@ -1,12 +1,15 @@
 package config
 
 import (
+	"log"
 	"os"
 	"path/filepath"
 
 	"github.com/google/uuid"
 	"github.com/xingty/rcode-go/pkg/utils"
 )
+
+const ENV_DEBUG = "GCODE_DEBUG"
 
 var HOME, _ = os.UserHomeDir()
 
@@ -40,4 +43,19 @@ func InitGCodeEnv() {
 		file.Write([]byte(uuid.New().String()))
 		file.Close()
 	}
+
+	initLogger()
+}
+
+func initLogger() {
+	logDir := filepath.Join(GCODE_HOME, "logs")
+	if _, err := os.Stat(logDir); os.IsNotExist(err) {
+		os.MkdirAll(logDir, 0755)
+	}
+	logFilePath := filepath.Join(logDir, "ipc.log")
+	logFile, err := os.OpenFile(logFilePath, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
+	if err != nil {
+		panic(err)
+	}
+	log.SetOutput(logFile)
 }

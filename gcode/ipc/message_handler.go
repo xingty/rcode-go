@@ -3,6 +3,7 @@ package ipc
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/exec"
 
@@ -85,6 +86,7 @@ func (h *MessageHandler) NewSession(params *models.SessionParams) (models.Sessio
 	err := doValidation(config.GCODE_KEY_FILE, params.Keyfile)
 	if err != nil {
 		err := doValidation(config.RSSH_KEY_FILE, params.Keyfile)
+		log.Printf("Authentication failed, key: %s", params.Keyfile)
 		if err != nil {
 			return models.SessionData{}, err
 		}
@@ -114,7 +116,7 @@ func (h *MessageHandler) OpenIDE(params *models.OpenIDEParams) (string, error) {
 		return "", fmt.Errorf("invalid sid")
 	}
 
-	fmt.Printf("bin: %s, path: %s, hostname: %s\n", params.Bin, params.Path, session.Hostname)
+	log.Printf("bin: %s, path: %s, hostname: %s\n", params.Bin, params.Path, session.Hostname)
 
 	binName := params.Bin
 	hostname := session.Hostname

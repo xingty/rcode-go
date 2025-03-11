@@ -13,6 +13,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/shirou/gopsutil/v3/process"
+	"github.com/xingty/rcode-go/gcode/config"
 	"github.com/xingty/rcode-go/pkg/models"
 	"github.com/xingty/rcode-go/pkg/utils"
 )
@@ -54,7 +55,7 @@ func (s *IPCServerSocket) handleClient(conn net.Conn) error {
 			buf = append(buf, data[:index]...)
 			data, err := s.handler.HandleMessage(buf)
 			if err != nil {
-				fmt.Printf("%s", err.Error())
+				log.Printf("%s", err.Error())
 				rawData := models.NewRawResponse(1, "", err.Error())
 				conn.Write(rawData)
 				return err
@@ -78,25 +79,37 @@ func (s *IPCServerSocket) handleConnection(listener net.Listener) {
 	for {
 		tcpListener, ok := listener.(*net.TCPListener)
 		if !ok {
-			log.Fatal("无法将监听器转换为TCPListener")
+			log.Fatal("could not cast listener to TCPListener")
 		}
 
 		tcpListener.SetDeadline(time.Now().Add(10 * time.Second))
 		conn, err := tcpListener.Accept()
 		if err != nil {
 			if errors.Is(err, net.ErrClosed) {
-				log.Println("监听器已关闭，退出handleConnection")
+				log.Println("connection closed, server stopped")
 				return
 			}
 
 			if netErr, ok := err.(net.Error); ok && netErr.Timeout() {
 				activeSessions, inactiveSessions := s.getSessions()
 				clients := len(activeSessions) + len(inactiveSessions)
-				fmt.Printf("active: %d, inactive: %d, idle=%d\n", len(activeSessions), len(inactiveSessions), idle)
+				if os.Getenv(config.ENV_DEBUG) != "" {
+					log.Printf(
+						"active: %d, inactive: %d, idle=%d\n",
+						len(activeSessions), len(inactiveSessions), idle,
+					)
+				}
+
 				if len(inactiveSessions) > 0 {
 					for _, sid := range inactiveSessions {
+						log.Printf("destroy session: %s\n", sid)
 						s.handler.DestroySession(sid)
 					}
+
+					log.Printf(
+						"Server state: clients %d idle %d",
+						clients-len(inactiveSessions), idle,
+					)
 				}
 
 				if clients > 0 {
@@ -106,13 +119,15 @@ func (s *IPCServerSocket) handleConnection(listener net.Listener) {
 				}
 
 				if clients == 0 && idle > s.maxIdleTime {
-					fmt.Println("Server stopped: idle", idle)
+					log.Printf(
+						"Server stopped: clients %d, idle %d", clients, idle,
+					)
 					return
 				}
 
 				continue
 			}
-			log.Printf("接受连接时出错: %v", err)
+			log.Printf("error ocurred while accepting connection: %v", err)
 			continue
 		}
 
@@ -155,7 +170,7 @@ func (s *IPCServerSocket) Start(host string, port int) error {
 		return err
 	}
 	defer listener.Close()
-	fmt.Println("Server listening on ", listener.Addr())
+	log.Println("Server listening on ", listener.Addr())
 
 	go s.handleConnection(listener)
 
