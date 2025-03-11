@@ -37,6 +37,7 @@ func (s *IPCServerSocket) handleClient(conn net.Conn) error {
 	data := make([]byte, 1024)
 	delimiter := []byte{models.DELIMITER}
 	buf := make([]byte, 0)
+	defer conn.Close()
 
 	for {
 		n, err := conn.Read(data)

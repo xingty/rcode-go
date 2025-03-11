@@ -220,6 +220,7 @@ func sendMessage(binName string, dirName string, sid string, skey string) error 
 		return err
 	}
 
+	defer sock.Close()
 	params := models.OpenIDEParams{
 		Sid:  sid,
 		Skey: skey,

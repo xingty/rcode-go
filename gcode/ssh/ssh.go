@@ -48,8 +48,6 @@ func connect2IPCServer(ipc_host string, ipc_port int) *ipc.IPCClientSocket {
 }
 
 func createSession(sock *ipc.IPCClientSocket, hostname string) models.SessionData {
-	defer sock.Close()
-
 	data, err := os.ReadFile(config.RSSH_KEY_FILE)
 	if err != nil {
 		data, err = os.ReadFile(config.GCODE_KEY_FILE)
@@ -128,6 +126,7 @@ func createSSHArgs(
 
 	socks := connect2IPCServer(host, port)
 	s := createSession(socks, hostname)
+	socks.Close()
 
 	buf := make([]string, 0)
 	buf = append(buf, pre...)
