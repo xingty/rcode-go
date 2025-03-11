@@ -29,6 +29,8 @@ GSSH is a wrapper around the standard SSH command with added functionality:
 2. **Secure Tunneling**: Creates an SSH tunnel for inter-process communication (IPC).
 3. **Environment Setup**: Sets up necessary environment variables on the remote server.
 
+https://github.com/user-attachments/assets/be516cf7-326b-47d0-b8e5-2b9d0321a0bb
+
 When you connect to a remote server using `gssh`, it prepares both your local and remote environments for seamless interaction.
 
 ### GCode
@@ -99,6 +101,13 @@ gcode .       # Launches VS Code
 gcursor .     # Launches Cursor
 gwindsurf .   # Launches Windsurf
 ```
+
+### Opening Remote Directories Locally
+
+You can also use GCode locally to open remote directories directly in your IDE
+
+```bash
+gcode hostname remote-dir
 
 These commands will open the current directory (`.`) from the remote server in your local IDE.
 
