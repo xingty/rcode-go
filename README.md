@@ -41,9 +41,10 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
 
 ## Installation
 
+### *nix
 1. **Install GCode**:
 
-   To install or update nvm, you should run the install script. To do that, you may either download and run the script manually, or use the following cURL or Wget command:
+   To install or update gcode, you should run the install script. To do that, you may either download and run the script manually, or use the following cURL or Wget command:
 
    ```shell
    curl -o- https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.sh | bash
@@ -64,6 +65,18 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
    ```
 
    Add this line to your `~/.bashrc` or `~/.zshrc` to make it persistent.
+
+### Windows
+  You can intall gcode automatically viw powershell command.
+  ```powershell
+  irm https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.ps1 | iex
+
+  ```
+  Note: You may need to adjust your PowerShell execution policy first by running:
+  ```powershell
+  Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+  ```
+  or Download [the powershell script](https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.ps1) and execute it manually to install
 
 ## Usage
 
