@@ -29,7 +29,7 @@ type FileInfo struct {
 
 func IsSocketOpen(addr string) bool {
 	socks := ipc.NewIPCClientSocket(addr)
-	return socks.Connect("unix") != nil
+	return socks.Connect("unix") == nil
 }
 
 func GetCliPath(binName string) (string, error) {
