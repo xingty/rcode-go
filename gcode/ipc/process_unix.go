@@ -17,9 +17,7 @@ func StartIPCServer(binName string, args []string) error {
 	cmd.Stderr = nil
 
 	cmd.SysProcAttr = &syscall.SysProcAttr{
-		Setsid:  true,
-		Setpgid: true,
-		Pgid:    0,
+		Setsid: true,
 	}
 
 	return cmd.Start()

@@ -2,12 +2,10 @@ package ssh
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/xingty/rcode-go/gcode/config"
@@ -27,7 +25,6 @@ func connect2IPCServer(ipc_host string, ipc_port int) *ipc.IPCClientSocket {
 	args := []string{"--host", ipc_host, "--port", strconv.Itoa(ipc_port)}
 	ipc.StartIPCServer("gssh-ipc", args)
 	time.Sleep(100 * time.Millisecond)
-	sock.Close()
 
 	for i := 1; i < 10; i++ {
 		sock = ipc.NewIPCClientSocket(addr)
@@ -36,11 +33,10 @@ func connect2IPCServer(ipc_host string, ipc_port int) *ipc.IPCClientSocket {
 			break
 		}
 
-		if !errors.Is(err, syscall.ECONNREFUSED) {
-			panic(err)
-		}
+		// if !errors.Is(err, syscall.ECONNREFUSED) {
+		// 	panic(err)
+		// }
 
-		sock = ipc.NewIPCClientSocket(addr)
 		time.Sleep(100 * time.Millisecond)
 	}
 
