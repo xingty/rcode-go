@@ -11,6 +11,14 @@ Gcode is a Go implementation of rcode, inspired by yihong's rcode project. Thank
 - **GCode**: A command-line tool that allows you to open directories from a remote server in your local IDE (VS Code or Cursor).
 - **GSSH**: An enhanced SSH command that sets up a secure communication channel between your local machine and a remote server, enabling advanced features provided by GCode.
 
+## Supported Platforms
+
+GCode and GSSH are designed to work across multiple operating systems, providing flexibility for developers in various environments:
+
+- Windows
+- Linux
+- macOS
+
 ## How It Works
 
 ### GSSH
@@ -35,14 +43,23 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
 
 1. **Install GCode**:
 
-   Download `gcode` from the latest release
+   To install or update nvm, you should run the install script. To do that, you may either download and run the script manually, or use the following cURL or Wget command:
+
+   ```shell
+   curl -o- https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/master/install.sh | bash
+   ```
+
+   ```shell
+   wget -qO- https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/master/install.sh | bash
+   ```
+
 
 2. **Update PATH**:
 
    Ensure `GCODE_HOME` is in your `$PATH` to enable the `gcode` command:
 
    ```bash
-   export GCODE_HOME="change to your gcode path"
+   export GCODE_HOME="$HOME/gcode"
    export PATH=$PATH:$GCODE_HOME/bin
    ```
 
