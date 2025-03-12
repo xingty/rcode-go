@@ -125,13 +125,7 @@ func (h *MessageHandler) OpenIDE(params *models.OpenIDEParams) (string, error) {
 	ssh_remote := fmt.Sprintf("vscode-remote://ssh-remote+%s%s", hostname, path)
 	cmd := exec.Command(binName, "--folder-uri", ssh_remote)
 
-	err := cmd.Start()
-	if err != nil {
-		return "", err
-	}
-
-	cmd.Run()
-	return "", nil
+	return "", cmd.Run()
 }
 
 func (h *MessageHandler) DestroySession(sid string) {

@@ -1,8 +1,8 @@
 # gcode and gssh
 
-## Introduction
+Gcode is a Go implementation of rcode, inspired by [yihong's rcode project](https://github.com/yihong0618/rcode). Thanks to yihong.
 
-Gcode is a Go implementation of rcode, inspired by yihong's rcode project. Thanks to yihong.
+## Introduction
 
 **gcode** and **gssh** are tools designed to enhance remote development workflows by integrating SSH connections with local development environments. They allow developers to seamlessly work on remote projects as if they were local, improving productivity and convenience.
 
@@ -69,7 +69,7 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
    Add this line to your `~/.bashrc` or `~/.zshrc` to make it persistent.
 
 ### Windows
-  You can intall gcode automatically viw powershell command.
+  You can intall gcode automatically via powershell command.
   ```powershell
   irm https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.ps1 | iex
 

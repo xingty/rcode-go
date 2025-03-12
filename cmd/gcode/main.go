@@ -20,8 +20,8 @@ func main() {
 	config.InitGCodeEnv()
 
 	usage := func() {
-		fmt.Println("Usage: rcode <host> <dir> [options]")
-		fmt.Println("just rcode 'file' like your VSCode 'code' .")
+		fmt.Println("Usage: gcode <host> <dir> [options]")
+		fmt.Println("just gcode 'file' like your VSCode 'code' .")
 		fmt.Println("but you should config your ~/.ssh/config first")
 		fmt.Println("\nOptions:")
 		fmt.Println("  -l    if is_latest")
