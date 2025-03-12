@@ -1,0 +1,19 @@
+#!/bin/bash
+
+use_gssh=false
+args=()
+
+for arg in "$@"; do
+    if [ "$arg" = "--gssh" ]; then
+        use_gssh=true
+    else
+        args+=("$arg")
+    fi
+done
+
+if [ "$use_gssh" = true ]; then
+    echo "gssh is enabled"
+    gssh "${args[@]}"
+else
+    ssh "${args[@]}"
+fi

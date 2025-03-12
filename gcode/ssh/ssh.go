@@ -97,8 +97,9 @@ func createSSHArgs(
 	for i := range ssh_args {
 		param := ssh_args[i]
 		if param == "-R" || param == "-T" {
-			fmt.Printf("Error: %s is not allowed\n", param)
-			os.Exit(1)
+			fmt.Println("Warning: gssh is disabled because of -R or -T")
+			fmt.Println("ssh is used instead")
+			return ssh_args
 		}
 
 		if param == "-t" {
