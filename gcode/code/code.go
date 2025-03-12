@@ -68,12 +68,10 @@ func IsRemote(binName string) (bool, error) {
 		return false, nil
 	}
 
-	if os.Getenv("SSH_CLIENT") == "" {
-		return false, nil
-	}
+	return IS_RSSH_CLIENT || os.Getenv("SSH_CLIENT") == "", nil
 
-	_, err := GetCliPath(binName)
-	return err == nil, err
+	// _, err := GetCliPath(binName)
+	// return err == nil, err
 }
 
 func GetIpcSocket(binName string) (string, error) {

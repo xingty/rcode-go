@@ -33,10 +33,6 @@ func connect2IPCServer(ipc_host string, ipc_port int) *ipc.IPCClientSocket {
 			break
 		}
 
-		// if !errors.Is(err, syscall.ECONNREFUSED) {
-		// 	panic(err)
-		// }
-
 		time.Sleep(100 * time.Millisecond)
 	}
 

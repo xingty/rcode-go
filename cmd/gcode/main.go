@@ -96,7 +96,8 @@ func main() {
 		dirName, _ = filepath.Abs(dirName)
 		err := code.RunRemote(binName, dirName, code.MAX_IDLE_TIME)
 		if err != nil {
-			panic(err)
+			fmt.Printf("failed to run %s: %s\n", binName, err.Error())
+			os.Exit(1)
 		}
 
 		os.Exit(0)
