@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"sort"
 	"strings"
 	"time"
@@ -18,7 +19,7 @@ import (
 	"github.com/xingty/rcode-go/pkg/utils/sshconf"
 )
 
-const MAX_IDLE_TIME = 4 * 60 * 60
+const MAX_IDLE_TIME = 4 * 60 * 60 * 100
 
 var IS_RSSH_CLIENT = os.Getenv("RSSH_SID") != "" && os.Getenv("RSSH_SKEY") != ""
 
@@ -78,6 +79,9 @@ func GetIpcSocket(binName string) (string, error) {
 
 	uid := os.Getuid()
 	path := fmt.Sprintf("/run/user/%d/vscode-ipc-*.sock", uid)
+	if runtime.GOOS == "darwin" {
+		path = os.Getenv("TMPDIR") + "vscode-ipc-*.sock"
+	}
 	paths, err := filepath.Glob(path)
 	if err != nil {
 		return "", err
