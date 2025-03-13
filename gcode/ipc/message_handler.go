@@ -86,8 +86,8 @@ func (h *MessageHandler) NewSession(params *models.SessionParams) (models.Sessio
 	err := doValidation(config.GCODE_KEY_FILE, params.Keyfile)
 	if err != nil {
 		err := doValidation(config.RSSH_KEY_FILE, params.Keyfile)
-		log.Printf("Authentication failed, key: %s", params.Keyfile)
 		if err != nil {
+			log.Printf("Authentication failed, key: %s", params.Keyfile)
 			return models.SessionData{}, err
 		}
 	}
