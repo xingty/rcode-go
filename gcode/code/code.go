@@ -78,7 +78,14 @@ func GetIpcSocket(binName string) (string, error) {
 
 	uid := os.Getuid()
 	path := fmt.Sprintf("/run/user/%d/vscode-ipc-*.sock", uid)
-	paths, _ := filepath.Glob(path)
+	paths, err := filepath.Glob(path)
+	if err != nil {
+		return "", err
+	}
+
+	if len(paths) == 0 {
+		return "", fmt.Errorf("can't find ipc socket")
+	}
 
 	return NextOpenSocket(SortByAccessTime(paths), binName)
 }
@@ -122,7 +129,8 @@ func IsSocketProcessRunning(sock string, binName string) bool {
 	}
 
 	pidStr := strings.TrimSpace(string(output))
-	data, err := os.ReadFile("/proc/" + pidStr + "/cmdline")
+	// data, err := os.ReadFile("/proc/" + pidStr + "/cmdline")
+	data, err := exec.Command("ps", "-p", pidStr, "-o", "command").Output()
 	if err != nil {
 		return false
 	}
@@ -288,6 +296,8 @@ func RunRemote(binName string, dirName string, maxIdleTime int) error {
 		}
 
 		fmt.Printf("failed to send message: %s\ntrying fallback to vscode's IPC socket", err.Error())
+	} else {
+		fmt.Println("Warning: seems not running in gssh, trying fallback to vscode's IPC socket")
 	}
 
 	cli, err := GetCliPath(binName)
