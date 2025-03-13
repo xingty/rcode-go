@@ -80,6 +80,57 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
   ```
   or Download [the powershell script](https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.ps1) and execute it manually to install
 
+要在 `README.md` 中添加一段有关手动构建的说明，并结合 `makefile` 支持的内容，你可以参考下面的段落。这段说明会向用户解释如何使用 `makefile` 来手动构建项目：
+
+---
+
+### Manual Build
+
+For those who prefer to build the project manually or require more control over the build process, our `makefile` provides various targets to accommodate different build needs.
+
+#### Prerequisites
+
+Ensure you have `go` installed on your system. You can check your Go installation by running:
+
+```bash
+go version
+```
+
+#### Building the Project
+
+To build the project for all supported platforms and architectures, simply run:
+
+```bash
+make all
+```
+
+This command will compile the project for Windows, Linux, and macOS (darwin) for the supported architectures (amd64, 386, and arm64).
+
+#### Building for a Specific Platform and Architecture
+
+If you need to build for a specific platform and architecture, you can use:
+
+```bash
+make build-one PLATFORM=platform ARCH=arch
+```
+
+Replace `platform` and `arch` with your desired platform (`windows`, `linux`, `darwin`) and architecture (`amd64`, `386`, `arm64`). For example, to build for Linux on amd64, use:
+
+```bash
+make build-one PLATFORM=linux ARCH=amd64
+```
+
+#### Cleaning Build Artifacts
+
+To clean up all build artifacts, run:
+
+```bash
+make clean
+```
+
+This command removes the `dist` directory, which contains the build outputs.
+
+
 ## Usage
 
 ### Connecting to a Remote Server
@@ -108,10 +159,12 @@ You can also use GCode locally to open remote directories directly in your IDE
 
 ```bash
 gcode hostname remote-dir
+```
 
 These commands will open the current directory (`.`) from the remote server in your local IDE.
 
 ### Advanced Options
+
 
 - **Custom IPC Host**:
 
