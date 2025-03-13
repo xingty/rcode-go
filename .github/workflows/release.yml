@@ -27,6 +27,7 @@ jobs:
 
       - name: Build binaries
         run: |
+          export CGO_ENABLED=0
           make build
 
       - name: Archive artifacts

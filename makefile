@@ -41,13 +41,13 @@ build-one:
 	$(eval EXE_SUFFIX := $(if $(filter windows,$(PLATFORM)),.exe,))
 	
 	@# Build gssh
-	CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh$(EXE_SUFFIX) ./cmd/gssh
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh$(EXE_SUFFIX) ./cmd/gssh
 	
 	@# Build gssh-ipc
-	CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh-ipc$(EXE_SUFFIX) ./cmd/ipc
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh-ipc$(EXE_SUFFIX) ./cmd/ipc
 	
 	@# Build gcode
-	CGO_ENABLED=0 GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/gcode$(EXE_SUFFIX) ./cmd/gcode
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/gcode$(EXE_SUFFIX) ./cmd/gcode
 	
 	@# Copy platform-specific scripts
 	@if [ "$(PLATFORM)" = "windows" ]; then \

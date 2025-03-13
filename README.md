@@ -117,6 +117,8 @@ make build-one PLATFORM=platform ARCH=arch
 Replace `platform` and `arch` with your desired platform (`windows`, `linux`, `darwin`) and architecture (`amd64`, `386`, `arm64`). For example, to build for Linux on amd64, use:
 
 ```bash
+# export CGO_ENABLED=0 disable CGO if you want
+
 make build-one PLATFORM=linux ARCH=amd64
 ```
 
