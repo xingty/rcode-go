@@ -264,6 +264,15 @@ func RunRemote(binName string, dirName string, maxIdleTime int) error {
 		return fmt.Errorf(`need dir name here\n`)
 	}
 
+	stat, err := os.Stat(dirName)
+	if err != nil {
+		return err
+	}
+
+	if !stat.IsDir() {
+		return fmt.Errorf("%s is not a directory", dirName)
+	}
+
 	if !config.SUPPORTED_IDE.Has(binName) {
 		return fmt.Errorf(`unsupported ide: %s\n`, binName)
 	}

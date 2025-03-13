@@ -1,0 +1,16 @@
+#!/bin/bash
+
+realdir() {
+	SOURCE=$1
+	while [ -h "$SOURCE" ]; do
+		DIR=$(dirname "$SOURCE")
+		SOURCE=$(readlink "$SOURCE")
+		[[ $SOURCE != /* ]] && SOURCE=$DIR/$SOURCE
+	done
+	echo "$( cd -P "$(dirname "$SOURCE")" >/dev/null 2>&1 && pwd )"
+}
+
+BIN_NAME="gtrae"
+CODE_HOME="$(dirname "$(realdir "$0")")"
+CODE_BIN="$CODE_HOME/gcode"
+"$CODE_BIN" "$BIN_NAME" "$@"

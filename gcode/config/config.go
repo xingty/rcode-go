@@ -18,7 +18,7 @@ var GCCODE_CONFIG = filepath.Join(GCODE_HOME, "gcode")
 var GCODE_KEY_FILE = filepath.Join(GCODE_HOME, "keyfile")
 var RSSH_KEY_FILE = filepath.Join(HOME, ".rssh", "keyfile")
 
-var SUPPORTED_IDE = utils.NewSet("code", "cursor", "windsurf")
+var SUPPORTED_IDE = utils.NewSet("code", "cursor", "windsurf", "trae")
 
 func InitGCodeEnv() {
 	if _, err := os.Stat(GCODE_HOME); os.IsNotExist(err) {

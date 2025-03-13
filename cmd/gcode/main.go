@@ -14,6 +14,7 @@ var COMMANDS map[string]string = map[string]string{
 	"gcode":     "code",
 	"gcursor":   "cursor",
 	"gwindsurf": "windsurf",
+	"gtrae":     "trae",
 }
 
 func main() {
