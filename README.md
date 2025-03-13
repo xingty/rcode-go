@@ -80,9 +80,6 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
   ```
   or Download [the powershell script](https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.ps1) and execute it manually to install
 
-要在 `README.md` 中添加一段有关手动构建的说明，并结合 `makefile` 支持的内容，你可以参考下面的段落。这段说明会向用户解释如何使用 `makefile` 来手动构建项目：
-
----
 
 ### Manual Build
 
