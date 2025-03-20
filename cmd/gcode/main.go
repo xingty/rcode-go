@@ -1,11 +1,13 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/samber/lo"
 	"github.com/xingty/rcode-go/gcode/code"
 	"github.com/xingty/rcode-go/gcode/config"
 )
@@ -19,22 +21,9 @@ var COMMANDS map[string]string = map[string]string{
 
 func main() {
 	config.InitGCodeEnv()
-
-	usage := func() {
-		fmt.Println("Usage: gcode <host> <dir> [options]")
-		fmt.Println("just gcode 'file' like your VSCode 'code' .")
-		fmt.Println("but you should config your ~/.ssh/config first")
-		fmt.Println("\nOptions:")
-		fmt.Println("  -l    if is_latest")
-		fmt.Println("  -sn   string")
-		fmt.Println("        open shortcut name")
-		fmt.Println("  -os   string")
-		fmt.Println("        open shortcut name")
-	}
-
 	args := os.Args[1:]
 	if len(args) == 0 {
-		usage()
+		flag.Usage()
 		os.Exit(1)
 	}
 
@@ -44,41 +33,25 @@ func main() {
 		os.Exit(1)
 	}
 
+	flag.Usage = func() {
+		keys := strings.Join(lo.Keys(COMMANDS), " | ")
+
+		fmt.Printf("Usage: [%s] <host> <dir> [options]\n", keys)
+		fmt.Println("just gcode 'file' like your VSCode 'code' .")
+		fmt.Println("but you should config your ~/.ssh/config first")
+		fmt.Println("\nOptions:")
+		flag.PrintDefaults()
+	}
+
 	args = args[1:]
-	if len(args) == 0 {
-		usage()
-		os.Exit(1)
-	}
-
-	isLatest := false
-	openShortcut := false
-	shortcutName := "latest"
-	help := false
 	commands := make([]string, 0)
-	for i, arg := range args {
-		if arg == "-l" {
-			isLatest = true
-		} else if arg == "-os" {
-			openShortcut = true
-			if len(args) > i+1 {
-				shortcutName = args[i+1]
-				i += 1
-			}
-		} else if arg == "-sn" {
-			if len(args) > i+1 {
-				shortcutName = args[i+1]
-				i += 1
-			}
-		} else if arg == "-h" || arg == "--help" {
-			help = true
-		} else if !strings.HasPrefix(arg, "-") {
-			commands = append(commands, arg)
+	for index, arg := range args {
+		if strings.HasPrefix(arg, "-") {
+			arg = arg[index:]
+			break
 		}
-	}
 
-	if help {
-		usage()
-		os.Exit(0)
+		commands = append(commands, arg)
 	}
 
 	isRemote, err := code.IsRemote(binName)
@@ -89,7 +62,7 @@ func main() {
 
 	if isRemote {
 		if len(commands) == 0 {
-			usage()
+			flag.Usage()
 			os.Exit(1)
 		}
 
@@ -104,11 +77,16 @@ func main() {
 		os.Exit(0)
 	}
 
+	isLatest := flag.Bool("l", false, "if is_latest")
+	shortcutName := flag.String("sn", "latest", "open shortcut name")
+	openShortcut := flag.String("os", "", "open shortcut")
+	flag.CommandLine.Parse(args)
+
 	if len(commands) >= 2 {
 		hostname := commands[0]
 		dirName := commands[1]
 
-		err := code.RunLocal(binName, hostname, dirName, shortcutName)
+		err := code.RunLocal(binName, hostname, dirName, *shortcutName)
 		if err != nil {
 			fmt.Printf("failed to run %s: %s\n", binName, err.Error())
 			os.Exit(1)
@@ -117,7 +95,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	if isLatest {
+	if *isLatest {
 		err := code.RunLatest(binName)
 		if err != nil {
 			fmt.Printf("failed to run %s: %s\n", binName, err.Error())
@@ -127,8 +105,8 @@ func main() {
 		os.Exit(0)
 	}
 
-	if openShortcut {
-		err := code.RunShortcut(binName, shortcutName)
+	if *openShortcut != "" {
+		err := code.RunShortcut(binName, *shortcutName)
 		if err != nil {
 			fmt.Printf("failed to run %s: %s\n", binName, err.Error())
 			os.Exit(1)
@@ -137,6 +115,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	usage()
+	flag.Usage()
 	os.Exit(1)
 }

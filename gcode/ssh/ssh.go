@@ -22,7 +22,7 @@ func connect2IPCServer(ipc_host string, ipc_port int) *ipc.IPCClientSocket {
 	}
 
 	fmt.Println("starting ipc server...")
-	args := []string{"--host", ipc_host, "--port", strconv.Itoa(ipc_port)}
+	args := []string{"-host", ipc_host, "-port", strconv.Itoa(ipc_port)}
 	err = ipc.StartIPCServer("gssh-ipc", args)
 	if err != nil {
 		panic(err)
