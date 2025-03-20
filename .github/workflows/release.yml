@@ -28,7 +28,7 @@ jobs:
       - name: Build binaries
         run: |
           export CGO_ENABLED=0
-          make build
+          make build VERSION=${{ steps.get_version.outputs.version-without-v }}
 
       - name: Archive artifacts
         run: |
@@ -46,3 +46,22 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           files: ./dist/*
+
+      - name: Update Version
+        run: |
+          git checkout main
+          git pull origin main
+          echo "${{ steps.get_version.outputs.version-without-v }}" > VERSION
+
+      - name: Commit files
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add .  # 添加所有更改的文件
+          git commit -m '${{ steps.get_version.outputs.version }}' || echo "No changes to commit"
+
+      - name: Push changes
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: main
