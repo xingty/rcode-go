@@ -13,6 +13,9 @@ DIST_DIR := dist
 # Go build command
 GOBUILD := go build
 
+VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
+VERSION_FLAGS := -ldflags "-X main.version=$(VERSION)"
+
 # Default target
 .PHONY: all
 all: build
@@ -41,13 +44,13 @@ build-one:
 	$(eval EXE_SUFFIX := $(if $(filter windows,$(PLATFORM)),.exe,))
 	
 	@# Build gssh
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh$(EXE_SUFFIX) ./cmd/gssh
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) $(VERSION_FLAGS) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh$(EXE_SUFFIX) ./cmd/gssh
 	
 	@# Build gssh-ipc
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh-ipc$(EXE_SUFFIX) ./cmd/ipc
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) $(VERSION_FLAGS) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh-ipc$(EXE_SUFFIX) ./cmd/ipc
 	
 	@# Build gcode
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/gcode$(EXE_SUFFIX) ./cmd/gcode
+	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) $(VERSION_FLAGS) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/gcode$(EXE_SUFFIX) ./cmd/gcode
 	
 	@# Copy platform-specific scripts
 	@if [ "$(PLATFORM)" = "windows" ]; then \

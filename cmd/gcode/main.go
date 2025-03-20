@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 
 	"github.com/samber/lo"
@@ -18,6 +19,7 @@ var COMMANDS map[string]string = map[string]string{
 	"gwindsurf": "windsurf",
 	"gtrae":     "trae",
 }
+var version = "0.0.10"
 
 func main() {
 	config.InitGCodeEnv()
@@ -77,10 +79,16 @@ func main() {
 		os.Exit(0)
 	}
 
+	v := flag.Bool("v", false, "Show version")
 	isLatest := flag.Bool("l", false, "if is_latest")
 	shortcutName := flag.String("sn", "latest", "open shortcut name")
 	openShortcut := flag.String("os", "", "open shortcut")
 	flag.CommandLine.Parse(args)
+
+	if *v {
+		fmt.Printf("gcode version: %s %s/%s\n", version, runtime.GOOS, runtime.GOARCH)
+		os.Exit(0)
+	}
 
 	if len(commands) >= 2 {
 		hostname := commands[0]
