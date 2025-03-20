@@ -5,6 +5,7 @@ go 1.24.0
 require (
 	github.com/djherbis/times v1.6.0
 	github.com/google/uuid v1.6.0
+	github.com/mikkeloscar/sshconfig v0.1.1
 	github.com/samber/lo v1.49.1
 	github.com/shirou/gopsutil/v3 v3.24.5
 )
@@ -12,7 +13,6 @@ require (
 require (
 	github.com/go-ole/go-ole v1.2.6 // indirect
 	github.com/lufia/plan9stats v0.0.0-20211012122336-39d0f177ccd0 // indirect
-	github.com/mikkeloscar/sshconfig v0.1.1 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/power-devops/perfstat v0.0.0-20210106213030-5aafc221ea8c // indirect
 	github.com/shoenig/go-m1cpu v0.1.6 // indirect
