@@ -29,7 +29,7 @@ print_warning() {
 }
 
 # Check for required commands
-for cmd in curl jq tar; do
+for cmd in curl tar; do
     if ! command -v $cmd &> /dev/null; then
         print_error "$cmd is required but not installed. Please install it and try again."
     fi
@@ -60,6 +60,26 @@ detect_architecture() {
     echo "$arch"
 }
 
+version_compare() {
+    IFS='.' read -ra VER1 <<< "$1"
+    IFS='.' read -ra VER2 <<< "$2"
+    
+    local max_length=$(( ${#VER1[@]} > ${#VER2[@]} ? ${#VER1[@]} : ${#VER2[@]} ))
+    
+    for (( i=0; i<max_length; i++ )); do
+        local v1=${VER1[i]:-0}
+        local v2=${VER2[i]:-0}
+        
+        if ((10#$v1 > 10#$v2)); then
+            return "1"
+        elif ((10#$v1 < 10#$v2)); then
+            return "2"
+        fi
+    done
+    
+    return "0"
+}
+
 # Detect platform and architecture
 PLATFORM=$(detect_platform)
 ARCH=$(detect_architecture)
@@ -70,38 +90,56 @@ fi
 
 print_status "Detected platform: $PLATFORM, architecture: $ARCH"
 
-print_status "Fetching the latest release information from GitHub..."
+if command -v gcode &> /dev/null; then
+    print_status "gcode is already installed. Checking for updates..."
+    CURRENT_VERSION=$(gcode -v | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+    
+    if [ -z "$CURRENT_VERSION" ]; then
+        print_warning "Could not determine current version. Will proceed with installation."
+    else
+        print_status "Current version: $CURRENT_VERSION"
+    fi
+else
+    print_status "gcode is not installed. Will proceed with installation."
+    CURRENT_VERSION=""
+fi
 
-# Get the latest release info
-RELEASE_INFO=$(curl -s "https://api.github.com/repos/$REPO_OWNER/$REPO_NAME/releases/latest")
+print_status "Fetching the latest version information..."
+
+# Get the latest version from VERSION file
+VERSION=$(curl -s "https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/VERSION")
 if [ $? -ne 0 ]; then
-    print_error "Failed to fetch release information from GitHub. Please check your internet connection."
+    print_error "Failed to fetch version information. Please check your internet connection."
 fi
 
-# Check if API rate limit exceeded
-if echo "$RELEASE_INFO" | grep -q "API rate limit exceeded"; then
-    print_error "GitHub API rate limit exceeded. Please try again later."
+# Validate version format
+if ! echo "$VERSION" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+    print_error "Invalid version format: $VERSION"
 fi
 
-# Extract the tag name
-TAG_NAME=$(echo "$RELEASE_INFO" | jq -r .tag_name)
-if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" = "null" ]; then
-    print_error "Failed to get latest release tag. Please check repository name and owner."
+TAG_NAME="v$VERSION"
+print_status "Found latest version: $TAG_NAME"
+
+if [ -n "$CURRENT_VERSION" ]; then
+    version_compare "$CURRENT_VERSION" "$VERSION"
+    cmp=$?
+    if [ $cmp -eq 0 ]; then
+        print_status "gcode is already at the latest version. No update necessary."
+        exit 0
+    elif [ $cmp -eq 1 ]; then
+        print_status "Installed gcode version ($CURRENT_VERSION) is ahead of the latest release ($VERSION)."
+        exit 0
+    else
+        print_status "Update available: $CURRENT_VERSION -> $VERSION"
+    fi
 fi
 
-print_status "Found latest release: $TAG_NAME"
-
-# Find the tar.gz asset URL for this platform and architecture
 FILE_PATTERN="gcode-$TAG_NAME-$PLATFORM-$ARCH.tar.gz"
-
 print_status "Looking for file matching pattern: $FILE_PATTERN"
 
-ASSET_URL=$(echo "$RELEASE_INFO" | jq -r --arg pattern "$FILE_PATTERN" '.assets[] | select(.name == $pattern) | .browser_download_url')
-if [ -z "$ASSET_URL" ] || [ "$ASSET_URL" = "null" ]; then
-    print_error "No matching release file found for your platform ($PLATFORM) and architecture ($ARCH)."
-fi
+ASSET_URL="https://github.com/$REPO_OWNER/$REPO_NAME/releases/download/$TAG_NAME/$FILE_PATTERN"
 
-print_status "Found matching release file. Downloading..."
+print_status "Downloading release file from: $ASSET_URL"
 
 # Create a temporary directory
 TMP_DIR=$(mktemp -d)
