@@ -49,8 +49,8 @@ jobs:
 
       - name: Update Version
         run: |
-          git checkout main
-          git pull origin main
+          git fetch origin
+          git checkout -b main origin/main
           echo "${{ steps.get_version.outputs.version-without-v }}" > VERSION
 
       - name: Commit files
