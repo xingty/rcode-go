@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"sync"
 
 	"github.com/google/uuid"
 	"github.com/xingty/rcode-go/gcode/config"
@@ -22,6 +23,7 @@ type Session struct {
 
 type MessageHandler struct {
 	sessions map[string]*Session
+	lock     sync.Mutex
 }
 
 func NewMessageHandler() *MessageHandler {
@@ -97,6 +99,8 @@ func (h *MessageHandler) NewSession(params *models.SessionParams) (models.Sessio
 		Key: skey,
 	}
 
+	h.lock.Lock()
+	defer h.lock.Unlock()
 	h.sessions[sid] = &Session{
 		Pid:      params.Pid,
 		Hostname: params.Hostname,
@@ -129,5 +133,7 @@ func (h *MessageHandler) OpenIDE(params *models.OpenIDEParams) (string, error) {
 }
 
 func (h *MessageHandler) DestroySession(sid string) {
+	h.lock.Lock()
+	defer h.lock.Unlock()
 	delete(h.sessions, sid)
 }

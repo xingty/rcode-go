@@ -39,9 +39,10 @@ func main() {
 	flag.Usage = func() {
 		keys := strings.Join(lo.Keys(COMMANDS), " | ")
 
-		fmt.Printf("Usage: [%s] <host> <dir> [options]\n", keys)
-		fmt.Println("just gcode 'file' like your VSCode 'code' .")
-		fmt.Println("but you should config your ~/.ssh/config first")
+		fmt.Println("Usage:")
+		fmt.Printf("Run on local:  [%s] <host> <dir> [options]\n", keys)
+		fmt.Printf("Run on remote: [%s] <dir> \n", keys)
+		fmt.Println("Just gcode 'file' like your VSCode 'code' .")
 		fmt.Println("\nOptions:")
 		flag.PrintDefaults()
 	}
