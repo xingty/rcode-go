@@ -107,7 +107,7 @@ fi
 print_status "Fetching the latest version information..."
 
 # Get the latest version from VERSION file
-VERSION=$(curl -s "https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/VERSION")
+VERSION=$(curl -s "https://raw.githubusercontent.com/$REPO_OWNER/$REPO_NAME/refs/heads/main/VERSION")
 if [ $? -ne 0 ]; then
     print_error "Failed to fetch version information. Please check your internet connection."
 fi
