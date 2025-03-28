@@ -8,8 +8,17 @@ Gcode is a Go implementation of rcode, inspired by [yihong's rcode project](http
 
 ## Overview
 
+https://github.com/user-attachments/assets/be516cf7-326b-47d0-b8e5-2b9d0321a0bb
+
 - **GCode**: A command-line tool that allows you to open directories from a remote server in your local IDE (VS Code or Cursor).
 - **GSSH**: An enhanced SSH command that sets up a secure communication channel between your local machine and a remote server, enabling advanced features provided by GCode.
+
+## Features
+
+- **Seamless Remote Development**: Edit remote files in your local IDE without manual synchronization.
+- **Secure Communication**: All data transfer occurs over SSH tunnels, ensuring security.
+- **IDE Integration**: Automatically detects and launches the appropriate editor.
+- **Session Management**: Handles multiple sessions with unique identifiers.
 
 ## Supported Platforms
 
@@ -18,6 +27,39 @@ GCode and GSSH are designed to work across multiple operating systems, providing
 - Windows
 - Linux
 - macOS
+
+## Usage
+
+### Connecting to a Remote Server
+
+Use GSSH to connect to your remote server:
+
+```bash
+gssh your-remote-server
+```
+
+GSSH accepts all standard SSH parameters, except `-R` and `-T`.
+
+### Opening a Remote Directory
+
+After connecting with GSSH, use GCode on the remote server to open directories in your local IDE:
+
+```bash
+gcode .       # Launches VS Code
+gcursor .     # Launches Cursor
+gwindsurf .   # Launches Windsurf
+gtrae .       # Launches Trae
+```
+
+### Opening Remote Directories Locally
+
+You can also use GCode locally to open remote directories directly in your IDE
+
+```bash
+gcode hostname remote-dir
+```
+
+These commands will open the current directory (`.`) from the remote server in your local IDE.
 
 ## How It Works
 
@@ -29,8 +71,6 @@ GSSH is a wrapper around the standard SSH command with added functionality:
 2. **Secure Tunneling**: Creates an SSH tunnel for inter-process communication (IPC).
 3. **Environment Setup**: Sets up necessary environment variables on the remote server.
 
-https://github.com/user-attachments/assets/be516cf7-326b-47d0-b8e5-2b9d0321a0bb
-
 When you connect to a remote server using `gssh`, it prepares both your local and remote environments for seamless interaction.
 
 ### GCode
@@ -41,10 +81,12 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
 - **IDE Integration**: Automatically launches the appropriate IDE (VS Code or Cursor) on your local machine.
 - **Remote Directory Access**: Opens the specified remote directory in your local IDE, enabling you to edit files as if they were local.
 
+
+
 ## Installation
 
-### *nix
-1. **Install GCode**:
+### unix/linux
+1. **Install or Update GCode**:
 
    To install or update gcode, you should run the install script. To do that, you may either download and run the script manually, or use the following cURL or Wget command:
 
@@ -79,6 +121,18 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
   Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
   ```
   or Download [the powershell script](https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.ps1) and execute it manually to install
+
+## Manual Download
+
+If you prefer to manually download the latest release package, you can do so from the GitHub Releases page:
+
+1. Go to the [Releases](https://github.com/xingty/rcode-go/releases) page of the `rcode-go` repository.
+2. Look for the latest release.
+3. Download the appropriate package for your platform and architecture from the assets section.
+
+After downloading, you may need to extract the package (if it is a `.zip` or `.tar.gz` file) and manually move the files to your desired location.
+
+Remember to update your `$PATH` environment variable if necessary, to include the path to the `gcode` binary.
 
 
 ### Manual Build
@@ -130,39 +184,6 @@ make clean
 This command removes the `dist` directory, which contains the build outputs.
 
 
-## Usage
-
-### Connecting to a Remote Server
-
-Use GSSH to connect to your remote server:
-
-```bash
-gssh your-remote-server
-```
-
-GSSH accepts all standard SSH parameters, except `-R` and `-T`.
-
-### Opening a Remote Directory
-
-After connecting with GSSH, use GCode on the remote server to open directories in your local IDE:
-
-```bash
-gcode .       # Launches VS Code
-gcursor .     # Launches Cursor
-gwindsurf .   # Launches Windsurf
-gtrae .       # Launches Trae
-```
-
-### Opening Remote Directories Locally
-
-You can also use GCode locally to open remote directories directly in your IDE
-
-```bash
-gcode hostname remote-dir
-```
-
-These commands will open the current directory (`.`) from the remote server in your local IDE.
-
 ### Advanced Options
 
 
@@ -177,14 +198,6 @@ These commands will open the current directory (`.`) from the remote server in y
   ```bash
   gssh --port <port> your-remote-server
   ```
-
-## Features
-
-- **Seamless Remote Development**: Edit remote files in your local IDE without manual synchronization.
-- **Secure Communication**: All data transfer occurs over SSH tunnels, ensuring security.
-- **IDE Integration**: Automatically detects and launches the appropriate editor.
-- **Session Management**: Handles multiple sessions with unique identifiers.
-
 
 ## Notes
 
