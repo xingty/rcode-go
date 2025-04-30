@@ -6,7 +6,6 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/xingty/rcode-go/gcode/config"
 	"github.com/xingty/rcode-go/gcode/ipc"
 )
 
@@ -29,7 +28,7 @@ func main() {
 		os.Exit(0)
 	}
 
-	config.InitGCodeEnv()
+	// config.InitGCodeEnv()
 	server := ipc.NewIPCServerSocket(maxIdleTime)
 	server.Start(host, port)
 }

@@ -10,7 +10,6 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/xingty/rcode-go/gcode/code"
-	"github.com/xingty/rcode-go/gcode/config"
 )
 
 var COMMANDS map[string]string = map[string]string{
@@ -23,7 +22,7 @@ var COMMANDS map[string]string = map[string]string{
 var version = "0.0.10"
 
 func main() {
-	config.InitGCodeEnv()
+	// config.InitGCodeEnv()
 	args := os.Args[1:]
 	if len(args) == 0 {
 		flag.Usage()

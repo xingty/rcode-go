@@ -6,7 +6,6 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/xingty/rcode-go/gcode/config"
 	"github.com/xingty/rcode-go/gcode/ssh"
 )
 
@@ -34,6 +33,6 @@ func main() {
 		os.Exit(0)
 	}
 
-	config.InitGCodeEnv()
+	// config.InitGCodeEnv()
 	ssh.Run(host, port, flag.Args())
 }

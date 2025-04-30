@@ -20,6 +20,11 @@ var RSSH_KEY_FILE = filepath.Join(HOME, ".rssh", "keyfile")
 
 var SUPPORTED_IDE = utils.NewSet("code", "cursor", "windsurf", "trae")
 
+func init() {
+	InitGCodeEnv()
+	initLogger()
+}
+
 func InitGCodeEnv() {
 	if _, err := os.Stat(GCODE_HOME); os.IsNotExist(err) {
 		println("GCODE_HOME not exist, creating...")
@@ -43,8 +48,6 @@ func InitGCodeEnv() {
 		file.Write([]byte(uuid.New().String()))
 		file.Close()
 	}
-
-	initLogger()
 }
 
 func initLogger() {
