@@ -1,10 +1,45 @@
 #!/bin/bash
 
+detect_platform() {
+    local platform
+    case "$(uname -s)" in
+        Linux*)     platform="linux";;
+        Darwin*)    platform="darwin";;
+        CYGWIN*|MINGW*|MSYS*) platform="windows";;
+        *)          platform="unknown";;
+    esac
+    echo "$platform"
+}
+
+detect_architecture() {
+    local arch
+    case "$(uname -m)" in
+        x86_64|amd64)  arch="amd64";;
+        arm64|aarch64) arch="arm64";;
+        armv7l)        arch="arm";;
+        i?86)          arch="386";;
+        *)             arch="unknown";;
+    esac
+    echo "$arch"
+}
+
+determine_install_dir() {
+    if [ -n "$GCODE_HOME" ]; then
+        echo "$GCODE_HOME"
+    elif [ "$(detect_platform)" = "darwin" ]; then
+        echo "$HOME/Library/Application Support"
+    elif [ -n "$XDG_DATA_HOME" ]; then
+        echo "$XDG_DATA_HOME"
+    else
+        echo "$HOME/.local/share"
+    fi
+}
+
 # Configuration
 REPO_OWNER="xingty"
 REPO_NAME="rcode-go"
-INSTALL_DIR="$HOME"
-BIN_PATH="$HOME/gcode/bin"
+INSTALL_DIR="$(determine_install_dir)"
+BIN_PATH="$INSTALL_DIR/gcode/bin"
 
 # Text colors
 GREEN='\033[0;32m'
@@ -28,37 +63,20 @@ print_warning() {
     echo -e "${YELLOW}[WARNING]${NC} $1"
 }
 
+if [ ! -d "$INSTALL_DIR" ]; then
+    print_warning "$INSTALL_DIR does not exist, creating it..."
+    if ! mkdir -p "$INSTALL_DIR"; then
+        print_error "Failed to create $INSTALL_DIR"
+    fi
+fi
+print_status "Gcode will be installed to: $INSTALL_DIR"
+
 # Check for required commands
 for cmd in curl tar; do
     if ! command -v $cmd &> /dev/null; then
         print_error "$cmd is required but not installed. Please install it and try again."
     fi
 done
-
-# Detect platform (linux, darwin, windows)
-detect_platform() {
-    local platform
-    case "$(uname -s)" in
-        Linux*)     platform="linux";;
-        Darwin*)    platform="darwin";;
-        CYGWIN*|MINGW*|MSYS*) platform="windows";;
-        *)          platform="unknown";;
-    esac
-    echo "$platform"
-}
-
-# Detect architecture (amd64, arm64, etc.)
-detect_architecture() {
-    local arch
-    case "$(uname -m)" in
-        x86_64|amd64)  arch="amd64";;
-        arm64|aarch64) arch="arm64";;
-        armv7l)        arch="arm";;
-        i?86)          arch="386";;
-        *)             arch="unknown";;
-    esac
-    echo "$arch"
-}
 
 version_compare() {
     IFS='.' read -ra VER1 <<< "$1"
