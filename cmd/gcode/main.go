@@ -16,6 +16,7 @@ var COMMANDS map[string]string = map[string]string{
 	"gcode":     "code",
 	"gcursor":   "cursor",
 	"gwindsurf": "windsurf",
+	"gzed":      "zed",
 	"gtrae":     "trae",
 }
 

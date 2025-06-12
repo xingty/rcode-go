@@ -1,147 +1,15 @@
 package code
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
-	"runtime"
-	"sort"
 	"strings"
-	"time"
 
-	"github.com/djherbis/times"
-	"github.com/xingty/rcode-go/gcode/config"
-	"github.com/xingty/rcode-go/gcode/ipc"
-	"github.com/xingty/rcode-go/pkg/models"
 	"github.com/xingty/rcode-go/pkg/utils/sshconf"
 )
-
-const MAX_IDLE_TIME = 4 * 60 * 60 * 100
-
-var IS_RSSH_CLIENT = os.Getenv("RSSH_SID") != "" && os.Getenv("RSSH_SKEY") != ""
-
-type FileInfo struct {
-	Path  string
-	Atime int64
-}
-
-func IsSocketOpen(addr string) bool {
-	socks := ipc.NewIPCClientSocket(addr)
-	return socks.Connect("unix") == nil
-}
-
-func GetCliPath(binName string) (string, error) {
-	if !config.SUPPORTED_IDE.Has(binName) {
-		return "", errors.New("unsupported ide")
-	}
-
-	binPath := binName
-	if binName == "code" {
-		binPath = "vscode"
-	}
-
-	homeDir, _ := os.UserHomeDir()
-	codePath := fmt.Sprintf("%s/.%s-server/cli/servers", homeDir, binPath)
-	servers, err := filepath.Glob(codePath + "/Stable-*")
-	if err == nil && len(servers) > 0 {
-		list := SortByAccessTime(servers)
-		cli := list[0].Path + "/server/bin/remote-cli/" + binName
-		return cli, nil
-	}
-
-	codePath = fmt.Sprintf("%s/.%s-server/bin", homeDir, binPath)
-	servers, err = filepath.Glob(codePath + "/*")
-	if err == nil && len(servers) > 0 {
-		list := SortByAccessTime(servers)
-		cli := list[0].Path + "/bin/remote-cli/" + binName
-		return cli, nil
-	}
-
-	err = fmt.Errorf("can't find .%s-server at home dir. please install it fist", binName)
-	return "", err
-}
-
-func IsRemote(binName string) (bool, error) {
-	if !config.SUPPORTED_IDE.Has(binName) {
-		return false, nil
-	}
-
-	return IS_RSSH_CLIENT || os.Getenv("SSH_CLIENT") != "", nil
-}
-
-func GetIpcSocket(binName string) (string, error) {
-	if !config.SUPPORTED_IDE.Has(binName) {
-		return "", errors.New("unsupported ide")
-	}
-
-	uid := os.Getuid()
-	path := fmt.Sprintf("/run/user/%d/vscode-ipc-*.sock", uid)
-	if runtime.GOOS == "darwin" {
-		path = os.Getenv("TMPDIR") + "vscode-ipc-*.sock"
-	}
-	paths, err := filepath.Glob(path)
-	if err != nil {
-		return "", err
-	}
-
-	if len(paths) == 0 {
-		return "", fmt.Errorf("can't find ipc socket")
-	}
-
-	return NextOpenSocket(SortByAccessTime(paths), binName)
-}
-
-func NextOpenSocket(list []FileInfo, binName string) (string, error) {
-	now := time.Now().Unix()
-	for _, info := range list {
-		if now-info.Atime > MAX_IDLE_TIME {
-			continue
-		}
-
-		if IsSocketOpen(info.Path) && IsSocketProcessRunning(info.Path, binName) {
-			return info.Path, nil
-		}
-	}
-
-	return "", os.ErrNotExist
-}
-
-func SortByAccessTime(paths []string) []FileInfo {
-	list := make([]FileInfo, len(paths))
-	for i, path := range paths {
-		fp, _ := times.Stat(path)
-		list[i] = FileInfo{
-			Path:  path,
-			Atime: int64(fp.AccessTime().Unix()),
-		}
-	}
-
-	sort.Slice(list, func(i, j int) bool {
-		return list[i].Atime > list[j].Atime
-	})
-
-	return list
-}
-
-func IsSocketProcessRunning(sock string, binName string) bool {
-	output, err := exec.Command("lsof", "-t", sock).Output()
-	if err != nil {
-		return false
-	}
-
-	pidStr := strings.TrimSpace(string(output))
-	// data, err := os.ReadFile("/proc/" + pidStr + "/cmdline")
-	data, err := exec.Command("ps", "-p", pidStr, "-o", "command").Output()
-	if err != nil {
-		return false
-	}
-
-	keyword := binName + "-server"
-	return strings.Contains(string(data), keyword)
-}
 
 func RunLocal(
 	binName string,
@@ -149,175 +17,82 @@ func RunLocal(
 	dirName string,
 	shortcutName string) error {
 
-	home, _ := os.UserHomeDir()
-	if strings.HasPrefix(dirName, "~/") {
-
-		cfgFile := filepath.Join(home, "/.ssh/config")
-		config := sshconf.NewSSHConfig(cfgFile)
-		host := config.GetHost(hostname)
-		if host == nil {
-			return errors.New("couldn't expand user home directory")
-		}
-
-		dirName = "/home/" + host.GetUser("root") + dirName[1:]
+	if binName == "zed" {
+		return runZed(hostname, dirName)
+	} else {
+		return runVSCodeLikeIDE(binName, hostname, dirName, shortcutName)
 	}
+}
 
+func runZed(hostname string, dirName string) error {
+	remoteURI := fmt.Sprintf("ssh://%s%s", hostname, dirName)
+	return exec.Command("zed", remoteURI).Run()
+}
+
+func runVSCode(hostname string, dirName string) error {
 	remoteURI := fmt.Sprintf("vscode-remote://ssh-remote+%s%s", hostname, dirName)
-	file := filepath.Join(home, ".gcode", "gcode")
-	fs, _ := os.OpenFile(file, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-	defer fs.Close()
-	fs.WriteString(fmt.Sprintf("%s,%s\n", shortcutName, remoteURI))
+	return exec.Command("vscode", "--folder-uri", remoteURI).Run()
+}
 
-	err := exec.Command(binName, "--folder-uri", remoteURI).Run()
-	if err != nil {
-		return err
+func expandDir(hostname string, dirName string, platform string) (string, error) {
+	home, _ := os.UserHomeDir()
+
+	cfgFile := filepath.Join(home, "/.ssh/config")
+	config := sshconf.NewSSHConfig(cfgFile)
+	host := config.GetHost(hostname)
+	if host == nil {
+		return "", errors.New("couldn't expand user home directory")
 	}
 
-	return nil
+	var homeDir string
+	if platform == "linux" {
+		homeDir = "/home/"
+	} else if platform == "macos" {
+		homeDir = "/Users/"
+	} else {
+		panic("unsupported platform: " + platform)
+	}
+
+	return homeDir + host.GetUser("root") + dirName[1:], nil
+}
+
+func runVSCodeLikeIDE(
+	binName string,
+	hostname string,
+	dirName string,
+	shortcutName string) error {
+
+	if strings.HasPrefix(dirName, "~/") {
+		var err error
+		dirName, err = expandDir(hostname, dirName, "linux")
+		if err != nil {
+			return err
+		}
+	}
+
+	AppendConfig(shortcutName, hostname, dirName)
+	return runVSCode(hostname, dirName)
 }
 
 func RunLatest(binName string) error {
-	recordFile := fmt.Sprintf("%s/.gcode/gcode", config.HOME)
-	content, err := os.ReadFile(recordFile)
+	err := RunShortcut(binName, "latest")
 	if err != nil {
-		panic(err)
-	}
-
-	lines := strings.Split(string(content), "\n")
-	for i := len(lines) - 1; i >= 0; i-- {
-		line := strings.TrimSpace(lines[i])
-		if len(line) == 0 {
-			continue
-		}
-
-		segs := strings.Split(lines[i], ",")
-		remoteURI := strings.TrimSpace(segs[len(segs)-1])
-
-		err := exec.Command(binName, "--folder-uri", remoteURI).Run()
-		return err
+		return errors.New("no latest config, please run 'gcode hostname dir' first")
 	}
 
 	return nil
 }
 
 func RunShortcut(binName string, shortcutName string) error {
-	recordFile := fmt.Sprintf("%s/.gcode/gcode", config.HOME)
-	content, err := os.ReadFile(recordFile)
-	if err != nil {
-		panic(err)
+	uri := ReadAndMergeConfig("latest")
+	if len(uri) == 0 {
+		return errors.New("no latest config, please run 'gcode hostname dir' first")
 	}
 
-	lines := strings.SplitSeq(string(content), "\n")
-	for line := range lines {
-		segs := strings.Split(line, ",")
-		if shortcutName == strings.TrimSpace(segs[0]) {
-			remoteURI := strings.TrimSpace(segs[len(segs)-1])
-			return exec.Command(binName, "--folder-uri", remoteURI).Run()
-		}
-	}
-
-	return errors.New("shortcut not found: " + shortcutName)
-}
-
-func sendMessage(binName string, dirName string, sid string, skey string) error {
-	ipcSock := fmt.Sprintf("/tmp/rssh-ipc-%s.sock", sid)
-	sock := ipc.NewIPCClientSocket(ipcSock)
-	err := sock.Connect("unix")
-	if err != nil {
-		return err
-	}
-
-	defer sock.Close()
-	params := models.OpenIDEParams{
-		Sid:  sid,
-		Skey: skey,
-		Path: dirName,
-		Bin:  binName,
-	}
-
-	rawParams, _ := json.Marshal(params)
-
-	payload := models.MessagePayload{
-		Method: "open_ide",
-		Params: rawParams,
-	}
-
-	data, err := json.Marshal(payload)
-	if err != nil {
-		return err
-	}
-
-	err = sock.Send(data)
-	if err != nil {
-		return err
-	}
-
-	resData, err := sock.Receive()
-	if err != nil {
-		return err
-	}
-
-	res := &models.ResponsePayload[any]{}
-
-	err = json.Unmarshal(resData, res)
-	if err != nil {
-		return err
-	}
-
-	if res.Code != 0 {
-		return errors.New(res.Message)
-	}
-
-	return nil
-}
-
-func RunRemote(binName string, dirName string, maxIdleTime int) error {
-	if len(dirName) == 0 {
-		return fmt.Errorf(`need dir name here\n`)
-	}
-
-	stat, err := os.Stat(dirName)
-	if err != nil {
-		return err
-	}
-
-	if !stat.IsDir() {
-		return fmt.Errorf("%s is not a directory", dirName)
-	}
-
-	if !config.SUPPORTED_IDE.Has(binName) {
-		return fmt.Errorf(`unsupported ide: %s\n`, binName)
-	}
-
-	if IS_RSSH_CLIENT {
-		// communicate with rssh's IPC Socket
-		sid := os.Getenv("RSSH_SID")
-		skey := os.Getenv("RSSH_SKEY")
-
-		err := sendMessage(binName, dirName, sid, skey)
-		if err == nil {
-			return nil
-		}
-
-		fmt.Printf("failed to send message: %s\ntrying fallback to vscode's IPC socket", err.Error())
+	uris := strings.Split(uri, ",")
+	if binName == "zed" {
+		return runZed(uris[1], uris[2])
 	} else {
-		fmt.Println("Warning: seems not running in gssh, trying fallback to vscode's IPC socket")
+		return runVSCode(uris[1], uris[2])
 	}
-
-	cli, err := GetCliPath(binName)
-	if err != nil {
-		return err
-	}
-	ipc_socket, err := GetIpcSocket(binName)
-	if err != nil {
-		return err
-	}
-
-	os.Setenv("VSCODE_IPC_HOOK_CLI", ipc_socket)
-	err = exec.Command(cli, dirName, ipc_socket).Run()
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

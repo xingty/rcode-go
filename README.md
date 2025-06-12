@@ -48,6 +48,7 @@ After connecting with GSSH, use GCode on the remote server to open directories i
 gcode .       # Launches VS Code
 gcursor .     # Launches Cursor
 gwindsurf .   # Launches Windsurf
+gzed          # Launches zed
 gtrae .       # Launches Trae
 ```
 
