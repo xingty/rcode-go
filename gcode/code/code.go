@@ -31,7 +31,7 @@ func runZed(hostname string, dirName string) error {
 
 func runVSCode(hostname string, dirName string) error {
 	remoteURI := fmt.Sprintf("vscode-remote://ssh-remote+%s%s", hostname, dirName)
-	return exec.Command("vscode", "--folder-uri", remoteURI).Run()
+	return exec.Command("code", "--folder-uri", remoteURI).Run()
 }
 
 func expandDir(hostname string, dirName string, platform string) (string, error) {
@@ -71,6 +71,7 @@ func runVSCodeLikeIDE(
 	}
 
 	AppendConfig(shortcutName, hostname, dirName)
+	ReadAndMergeConfig("latest")
 	return runVSCode(hostname, dirName)
 }
 

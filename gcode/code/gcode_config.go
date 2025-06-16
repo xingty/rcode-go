@@ -23,7 +23,10 @@ func AppendConfig(name, host, dir string) {
 
 func WriteConfig(content string) {
 	file := filepath.Join(config.GCODE_HOME, "gcode")
-	fs, _ := os.OpenFile(file, os.O_CREATE|os.O_WRONLY, 0644)
+	fs, err := os.Create(file)
+	if err != nil {
+		panic(fmt.Sprintf("failed to open config file: %s, error: %v", file, err))
+	}
 	defer fs.Close()
 	fs.WriteString(content)
 }
@@ -36,7 +39,7 @@ func ParseOldURI(uri string) (string, string) {
 }
 
 func ReadAndMergeConfig(name string) string {
-	confFile := filepath.Join(config.GCODE_HOME, "gcode.json")
+	confFile := filepath.Join(config.GCODE_HOME, "gcode")
 	content, err := os.ReadFile(confFile)
 	if err != nil {
 		panic(err)
@@ -75,7 +78,7 @@ func ReadAndMergeConfig(name string) string {
 
 	newContent := strings.Join(configList, "\n")
 	if len(strings.TrimSpace(newContent)) > 0 {
-		WriteConfig(newContent)
+		WriteConfig(newContent + "\n")
 	}
 
 	index, ok := values[name]

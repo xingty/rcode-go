@@ -256,6 +256,10 @@ func RunRemote(binName string, dirName string, maxIdleTime int) error {
 			return nil
 		}
 
+		if binName == "zed" {
+			return err
+		}
+
 		fmt.Printf("failed to send message: %s\ntrying fallback to vscode's IPC socket", err.Error())
 	} else {
 		fmt.Println("Warning: seems not running in gssh, trying fallback to vscode's IPC socket")
