@@ -125,6 +125,10 @@ func (h *MessageHandler) OpenIDE(params *models.OpenIDEParams) (string, error) {
 	binName := params.Bin
 	hostname := session.Hostname
 	path := params.Path
+	uriType := "--folder-uri"
+	if params.FileType == "file" {
+		uriType = "--file-uri"
+	}
 
 	var ssh_remote string
 	var cmd *exec.Cmd
@@ -134,7 +138,7 @@ func (h *MessageHandler) OpenIDE(params *models.OpenIDEParams) (string, error) {
 		cmd = exec.Command(binName, ssh_remote)
 	} else {
 		ssh_remote = fmt.Sprintf("vscode-remote://ssh-remote+%s%s", hostname, path)
-		cmd = exec.Command(binName, "--folder-uri", ssh_remote)
+		cmd = exec.Command(binName, uriType, ssh_remote)
 	}
 
 	return "", cmd.Run()

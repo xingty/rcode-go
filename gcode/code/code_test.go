@@ -32,3 +32,16 @@ func TestGetCliPath(t *testing.T) {
 		t.Error(err)
 	}
 }
+
+func TestExpandDir(t *testing.T) {
+	home, _ := os.UserHomeDir()
+	expanded, err := expandDir("localhost", "~/test", "linux")
+	if err != nil {
+		t.Error(err)
+	}
+
+	expected := home + "/test"
+	if expanded != expected {
+		t.Errorf("expanded: %s, expected: %s", expanded, expected)
+	}
+}

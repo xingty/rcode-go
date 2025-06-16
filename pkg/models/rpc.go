@@ -11,10 +11,11 @@ type SessionParams struct {
 }
 
 type OpenIDEParams struct {
-	Sid  string `json:"sid"`
-	Skey string `json:"skey"`
-	Bin  string `json:"bin"`
-	Path string `json:"path"`
+	Sid      string `json:"sid"`
+	Skey     string `json:"skey"`
+	Bin      string `json:"bin"`
+	Path     string `json:"path"`
+	FileType string `json:"filetype"`
 }
 
 type SessionPayload[T any] struct {

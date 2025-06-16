@@ -142,7 +142,7 @@ func IsSocketProcessRunning(sock string, binName string) bool {
 	return strings.Contains(string(data), keyword)
 }
 
-func sendMessage(binName string, dirName string, sid string, skey string) error {
+func sendMessage(binName, dirName, sid, skey, fileType string) error {
 	ipcSock := fmt.Sprintf("/tmp/rssh-ipc-%s.sock", sid)
 	sock := ipc.NewIPCClientSocket(ipcSock)
 	err := sock.Connect("unix")
@@ -152,10 +152,11 @@ func sendMessage(binName string, dirName string, sid string, skey string) error 
 
 	defer sock.Close()
 	params := models.OpenIDEParams{
-		Sid:  sid,
-		Skey: skey,
-		Path: dirName,
-		Bin:  binName,
+		Sid:      sid,
+		Skey:     skey,
+		Path:     dirName,
+		Bin:      binName,
+		FileType: fileType,
 	}
 
 	rawParams, _ := json.Marshal(params)
@@ -223,13 +224,13 @@ func RunRemote(binName string, dirName string, maxIdleTime int) error {
 		return nil
 	}
 
-	openWithGSSHIPC := func(binName string, dirName string) error {
+	openWithGSSHIPC := func(binName, dirName, fileType string) error {
 		// communicate with rssh's IPC Socket
 		sid := os.Getenv("RSSH_SID")
 		skey := os.Getenv("RSSH_SKEY")
 		fmt.Println("running in gssh")
 
-		err := sendMessage(binName, dirName, sid, skey)
+		err := sendMessage(binName, dirName, sid, skey, fileType)
 		if err == nil {
 			return nil
 		}
@@ -237,21 +238,17 @@ func RunRemote(binName string, dirName string, maxIdleTime int) error {
 		return err
 	}
 
-	if !stat.IsDir() && binName != "zed" {
-		err := openWithInnerIPC(binName, dirName)
-		if err != nil {
-			return err
-		}
-
-		return nil
-	}
-
 	if !config.SUPPORTED_IDE.Has(binName) {
 		return fmt.Errorf(`unsupported ide: %s\n`, binName)
 	}
 
 	if IS_RSSH_CLIENT {
-		err := openWithGSSHIPC(binName, dirName)
+		fileType := "file"
+		if stat.IsDir() {
+			fileType = "dir"
+		}
+
+		err := openWithGSSHIPC(binName, dirName, fileType)
 		if err == nil {
 			return nil
 		}
