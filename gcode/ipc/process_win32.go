@@ -4,6 +4,7 @@
 package ipc
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
 	"syscall"
@@ -22,11 +23,26 @@ func StartIPCServer(binName string, args []string) error {
 	return cmd.Start()
 }
 
-func StartSSHClient(args []string) error {
-	cmd := exec.Command("ssh", args...)
+func StartSSHClient(args []string) int {
+	path, err := exec.LookPath("ssh")
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 255
+	}
+
+	cmd := exec.Command(path, args...)
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	return cmd.Run()
+	if err := cmd.Run(); err != nil {
+		if exitErr, ok := err.(*exec.ExitError); ok {
+			return exitErr.ExitCode()
+		}
+
+		fmt.Fprintln(os.Stderr, err)
+		return 255
+	}
+
+	return 0
 }

@@ -1,6 +1,7 @@
 # Configuration
 $REPO_OWNER = "xingty"
 $REPO_NAME = "rcode-go"
+$PLATFORM = "windows"
 $INSTALL_DIR = $env:USERPROFILE
 $BIN_PATH = "$($env:USERPROFILE)\gcode\bin"  
 
@@ -27,7 +28,6 @@ function Detect-Architecture {
     switch -Wildcard ($arch) {
         "amd64" { return "amd64" }
         "arm64" { return "arm64" }
-        "arm*" { return "arm" }
         "x86" { return "386" }
         default { return "unknown" }
     }

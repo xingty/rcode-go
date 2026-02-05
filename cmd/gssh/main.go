@@ -34,5 +34,5 @@ func main() {
 	}
 
 	// config.InitGCodeEnv()
-	ssh.Run(host, port, flag.Args())
+	os.Exit(ssh.Run(host, port, flag.Args()))
 }

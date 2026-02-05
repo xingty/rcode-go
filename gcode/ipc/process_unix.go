@@ -23,13 +23,19 @@ func StartIPCServer(binName string, args []string) error {
 	return cmd.Start()
 }
 
-func StartSSHClient(args []string) error {
+func StartSSHClient(args []string) int {
 	path, err := exec.LookPath("ssh")
 	if err != nil {
-		fmt.Println(err)
-		return err
+		fmt.Fprintln(os.Stderr, err)
+		return 255
 	}
 
 	newArgs := append([]string{"ssh"}, args...)
-	return syscall.Exec(path, newArgs, os.Environ())
+	if err := syscall.Exec(path, newArgs, os.Environ()); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 255
+	}
+
+	// unreachable on success, but keeps the compiler happy.
+	return 0
 }

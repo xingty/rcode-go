@@ -139,7 +139,7 @@ func createSSHArgs(
 	return append(buf, env)
 }
 
-func Run(ipc_host string, ipc_port int, ssh_args []string) {
+func Run(ipc_host string, ipc_port int, ssh_args []string) int {
 	newArgs := createSSHArgs(ipc_host, ipc_port, ssh_args)
-	ipc.StartSSHClient(newArgs)
+	return ipc.StartSSHClient(newArgs)
 }

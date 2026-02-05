@@ -16,7 +16,6 @@ detect_architecture() {
     case "$(uname -m)" in
         x86_64|amd64)  arch="amd64";;
         arm64|aarch64) arch="arm64";;
-        armv7l)        arch="arm";;
         i?86)          arch="386";;
         *)             arch="unknown";;
     esac
