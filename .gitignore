@@ -13,3 +13,5 @@ dist
 .nfs*
 
 test.go
+.tmp-home
+.gocache

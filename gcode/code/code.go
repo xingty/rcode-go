@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/xingty/rcode-go/gcode/config"
 	"github.com/xingty/rcode-go/pkg/utils/sshconf"
 )
 
@@ -22,6 +23,17 @@ func RunLocal(
 	} else {
 		return runVSCodeLikeIDE(binName, hostname, dirName, shortcutName)
 	}
+}
+
+func OpenLocalPath(binName string, path string) error {
+	if !config.SUPPORTED_IDE.Has(binName) {
+		return fmt.Errorf("unsupported ide: %s", binName)
+	}
+
+	if binName == "zed" {
+		return exec.Command("zed", path).Run()
+	}
+	return exec.Command(binName, path).Run()
 }
 
 func runZed(hostname string, dirName string) error {

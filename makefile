@@ -4,17 +4,21 @@
 PLATFORMS := windows linux darwin
 ARCHS := amd64 386 arm64
 
-# Command names
-CMDS := gssh gssh-ipc gcode
-
 # Output directory
 DIST_DIR := dist
 
 # Go build command
 GOBUILD := go build
 
+GOCACHE ?= $(CURDIR)/.gocache
+
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 VERSION_FLAGS := -ldflags "-X main.version=$(VERSION)"
+
+EXE_SUFFIX = $(if $(filter windows,$(PLATFORM)),.exe,)
+OUT_DIR = $(DIST_DIR)/$(PLATFORM)-$(ARCH)
+BIN_DIR = $(OUT_DIR)/bin
+GCODE_ALIASES := gcursor gwindsurf gzed gtrae
 
 # Default target
 .PHONY: all
@@ -23,7 +27,7 @@ all: build
 # Build for all platforms and architectures
 .PHONY: build
 build:
-	@for platform in $(PLATFORMS); do \
+	@set -e; for platform in $(PLATFORMS); do \
 		if [ "$$platform" = "darwin" ]; then \
 			archs="arm64 amd64"; \
 		else \
@@ -38,32 +42,48 @@ build:
 # Build for a specific platform and architecture
 .PHONY: build-one
 build-one:
-	@mkdir -p $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin
-	
-	@# Set executable extension based on platform
-	$(eval EXE_SUFFIX := $(if $(filter windows,$(PLATFORM)),.exe,))
-	
+	@if [ -z "$(PLATFORM)" ] || [ -z "$(ARCH)" ]; then \
+		echo "Error: PLATFORM and ARCH are required. Example: make build-one PLATFORM=linux ARCH=amd64"; \
+		exit 2; \
+	fi
+	@if ! echo " $(PLATFORMS) " | grep -q " $(PLATFORM) "; then \
+		echo "Error: unsupported PLATFORM '$(PLATFORM)'. Supported: $(PLATFORMS)"; \
+		exit 2; \
+	fi
+	@if ! echo " $(ARCHS) " | grep -q " $(ARCH) "; then \
+		echo "Error: unsupported ARCH '$(ARCH)'. Supported: $(ARCHS)"; \
+		exit 2; \
+	fi
+	@mkdir -p $(BIN_DIR)
+	@mkdir -p $(GOCACHE)
+
 	@# Build gssh
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) $(VERSION_FLAGS) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh$(EXE_SUFFIX) ./cmd/gssh
+	GOCACHE=$(GOCACHE) GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) $(VERSION_FLAGS) -o $(BIN_DIR)/gssh$(EXE_SUFFIX) ./cmd/gssh
 	
 	@# Build gssh-ipc
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) $(VERSION_FLAGS) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/gssh-ipc$(EXE_SUFFIX) ./cmd/ipc
+	GOCACHE=$(GOCACHE) GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) $(VERSION_FLAGS) -o $(BIN_DIR)/gssh-ipc$(EXE_SUFFIX) ./cmd/ipc
 	
 	@# Build gcode
-	GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) $(VERSION_FLAGS) -o $(DIST_DIR)/$(PLATFORM)-$(ARCH)/gcode$(EXE_SUFFIX) ./cmd/gcode
+	GOCACHE=$(GOCACHE) GOOS=$(PLATFORM) GOARCH=$(ARCH) $(GOBUILD) $(VERSION_FLAGS) -o $(BIN_DIR)/gcode$(EXE_SUFFIX) ./cmd/gcode
 	
-	@# Copy platform-specific scripts
+	@# Create gcode multicall aliases (argv0)
 	@if [ "$(PLATFORM)" = "windows" ]; then \
-		cp cmd/gcode/bat/*.bat $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/ 2>/dev/null || true; \
+		cp cmd/gcode/bat/ssh-wrapper.bat $(BIN_DIR)/ 2>/dev/null || true; \
+		for name in $(GCODE_ALIASES); do \
+			printf '@echo off\r\n\"%%~dp0gcode.exe\" --ide %s %%*\r\n' "$${name#g}" > $(BIN_DIR)/$$name.cmd; \
+		done; \
 	else \
-		cp cmd/gcode/sh/* $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/ ; \
-		chmod +x $(DIST_DIR)/$(PLATFORM)-$(ARCH)/bin/* 2>/dev/null || true; \
+		cp cmd/gcode/sh/ssh-wrapper $(BIN_DIR)/ 2>/dev/null || true; \
+		chmod +x $(BIN_DIR)/ssh-wrapper 2>/dev/null || true; \
+		for name in $(GCODE_ALIASES); do \
+			ln -sf gcode $(BIN_DIR)/$$name; \
+		done; \
 	fi
 
 # Clean build artifacts
 .PHONY: clean
 clean:
-	rm -r $(DIST_DIR)
+	rm -rf -- $(DIST_DIR)
 
 # Help target
 .PHONY: help
