@@ -1,38 +1,48 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"os"
 	"runtime"
 
+	"github.com/xingty/rcode-go/cmd/internal/gsshcli"
+	"github.com/xingty/rcode-go/gcode/config"
 	"github.com/xingty/rcode-go/gcode/ssh"
 )
 
 var version = "0.0.10"
 
 func main() {
-	for _, arg := range os.Args[1:] {
-		if arg == "-R" || arg == "-T" {
-			fmt.Printf("Error: %s is not allowed\n", arg)
-			os.Exit(1)
-		}
+	if handled, exitCode := maybeHandleInternalPrepare(os.Args[1:]); handled {
+		os.Exit(exitCode)
 	}
 
-	var host string
-	var port int
-	var v bool
+	opts, sshArgs, err := gsshcli.ParseArgs(os.Args[1:])
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return
+	}
 
-	flag.StringVar(&host, "host", "127.0.0.1", "IPC server host")
-	flag.IntVar(&port, "port", 7532, "IPC server port")
-	flag.BoolVar(&v, "v", false, "Show version")
-	flag.Parse()
-
-	if v {
+	if opts.Help {
+		fmt.Fprintln(os.Stdout, gsshcli.Usage("gssh"))
+		return
+	}
+	if opts.Version {
 		fmt.Printf("gssh version: %s %s/%s\n", version, runtime.GOOS, runtime.GOARCH)
-		os.Exit(0)
+		return
 	}
 
-	// config.InitGCodeEnv()
-	os.Exit(ssh.Run(host, port, flag.Args()))
+	closer, err := config.Setup(config.SetupOptions{
+		EnsureKeyFile: true,
+		InitLogger:    true,
+	})
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err.Error())
+		os.Exit(1)
+	}
+	if closer != nil {
+		defer closer()
+	}
+
+	os.Exit(ssh.Run(opts.Host, opts.Port, sshArgs))
 }

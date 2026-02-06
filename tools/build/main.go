@@ -120,7 +120,12 @@ func buildOne(repoRoot, goos, goarch, v string) error {
 		exeSuffix = ".exe"
 	}
 
-	if err := goBuild(repoRoot, goos, goarch, v, filepath.Join(binDir, "gssh"+exeSuffix), "./cmd/gssh"); err != nil {
+	gsshName := "gssh" + exeSuffix
+	if goos == "windows" {
+		gsshName = "gssh-core" + exeSuffix
+	}
+
+	if err := goBuild(repoRoot, goos, goarch, v, filepath.Join(binDir, gsshName), "./cmd/gssh"); err != nil {
 		return err
 	}
 	if err := goBuild(repoRoot, goos, goarch, v, filepath.Join(binDir, "gssh-ipc"+exeSuffix), "./cmd/ipc"); err != nil {
@@ -132,8 +137,30 @@ func buildOne(repoRoot, goos, goarch, v string) error {
 
 	if goos == "windows" {
 		if err := copyFile(
+			filepath.Join(repoRoot, "cmd", "gssh", "bat", "gssh.cmd"),
+			filepath.Join(binDir, "gssh.cmd"),
+			0,
+		); err != nil {
+			return err
+		}
+		if err := copyFile(
+			filepath.Join(repoRoot, "cmd", "gssh", "bat", "gssh.ps1"),
+			filepath.Join(binDir, "gssh.ps1"),
+			0,
+		); err != nil {
+			return err
+		}
+
+		if err := copyFile(
 			filepath.Join(repoRoot, "cmd", "gcode", "bat", "ssh-wrapper.bat"),
 			filepath.Join(binDir, "ssh-wrapper.bat"),
+			0,
+		); err != nil {
+			return err
+		}
+		if err := copyFile(
+			filepath.Join(repoRoot, "cmd", "gcode", "bat", "ssh-wrapper.ps1"),
+			filepath.Join(binDir, "ssh-wrapper.ps1"),
 			0,
 		); err != nil {
 			return err

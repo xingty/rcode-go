@@ -123,6 +123,8 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
   ```
   or Download [the powershell script](https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.ps1) and execute it manually to install
 
+  On Windows, `gssh` is a script entrypoint that launches `ssh.exe` directly after preparing the session, so the long-running process is `ssh.exe` instead of `gssh`.
+
 ## Manual Download
 
 If you prefer to manually download the latest release package, you can do so from the GitHub Releases page:

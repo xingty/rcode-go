@@ -228,7 +228,6 @@ func RunRemote(binName string, dirName string, maxIdleTime int) error {
 		// communicate with rssh's IPC Socket
 		sid := os.Getenv("RSSH_SID")
 		skey := os.Getenv("RSSH_SKEY")
-		fmt.Println("running in gssh")
 
 		err := sendMessage(binName, dirName, sid, skey, fileType)
 		if err == nil {

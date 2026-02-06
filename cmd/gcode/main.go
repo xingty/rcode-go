@@ -10,6 +10,7 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/xingty/rcode-go/gcode/code"
+	"github.com/xingty/rcode-go/gcode/config"
 )
 
 var IDE_BY_INVOKED = map[string]string{
@@ -31,7 +32,6 @@ var VALID_IDES = map[string]struct{}{
 var version = "0.0.10"
 
 func main() {
-	// config.InitGCodeEnv()
 	invoked := filepath.Base(os.Args[0])
 	invoked = strings.TrimSuffix(invoked, ".exe")
 
@@ -124,6 +124,11 @@ func main() {
 		hostname := commands[0]
 		dirName := commands[1]
 
+		if _, err := config.Setup(config.SetupOptions{EnsureConfigFile: true}); err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+
 		err := code.RunLocal(ideName, hostname, dirName, *shortcutName)
 		if err != nil {
 			fmt.Printf("failed to run %s: %s\n", ideName, err.Error())
@@ -134,6 +139,11 @@ func main() {
 	}
 
 	if *isLatest {
+		if _, err := config.Setup(config.SetupOptions{EnsureConfigFile: true}); err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+
 		err := code.RunLatest(ideName)
 		if err != nil {
 			fmt.Printf("failed to run %s: %s\n", ideName, err.Error())
@@ -144,6 +154,11 @@ func main() {
 	}
 
 	if *openShortcut != "" {
+		if _, err := config.Setup(config.SetupOptions{EnsureConfigFile: true}); err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+
 		err := code.RunShortcut(ideName, *shortcutName)
 		if err != nil {
 			fmt.Printf("failed to run %s: %s\n", ideName, err.Error())
