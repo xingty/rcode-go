@@ -19,6 +19,7 @@ type Session struct {
 	Hostname string
 	addr     string
 	Sid      string
+	Skey     string
 }
 
 type MessageHandler struct {
@@ -89,7 +90,7 @@ func (h *MessageHandler) NewSession(params *models.SessionParams) (models.Sessio
 	if err != nil {
 		err := doValidation(config.RSSH_KEY_FILE, params.Keyfile)
 		if err != nil {
-			log.Printf("Authentication failed, key: %s", params.Keyfile)
+			log.Printf("Authentication failed")
 			return models.SessionData{}, err
 		}
 	}
@@ -105,6 +106,7 @@ func (h *MessageHandler) NewSession(params *models.SessionParams) (models.Sessio
 		Pid:      params.Pid,
 		Hostname: params.Hostname,
 		Sid:      sid,
+		Skey:     skey,
 	}
 
 	return data, nil
@@ -115,15 +117,28 @@ func (h *MessageHandler) OpenIDE(params *models.OpenIDEParams) (string, error) {
 		return "", fmt.Errorf("unsupported ide")
 	}
 
+	if params.Sid == "" || params.Skey == "" {
+		return "", fmt.Errorf("invalid session")
+	}
+
+	h.lock.Lock()
 	session, ok := h.sessions[params.Sid]
 	if !ok {
+		h.lock.Unlock()
 		return "", fmt.Errorf("invalid sid")
 	}
 
-	log.Printf("bin: %s, path: %s, hostname: %s\n", params.Bin, params.Path, session.Hostname)
+	if params.Skey != session.Skey {
+		h.lock.Unlock()
+		return "", fmt.Errorf("invalid skey")
+	}
+
+	hostname := session.Hostname
+	h.lock.Unlock()
+
+	log.Printf("bin: %s, path: %s, hostname: %s\n", params.Bin, params.Path, hostname)
 
 	binName := params.Bin
-	hostname := session.Hostname
 	path := params.Path
 	uriType := "--folder-uri"
 	if params.FileType == "file" {
@@ -141,6 +156,7 @@ func (h *MessageHandler) OpenIDE(params *models.OpenIDEParams) (string, error) {
 		cmd = exec.Command(binName, uriType, ssh_remote)
 	}
 
+	configureNoConsoleWindow(cmd)
 	return "", cmd.Run()
 }
 
@@ -148,4 +164,15 @@ func (h *MessageHandler) DestroySession(sid string) {
 	h.lock.Lock()
 	defer h.lock.Unlock()
 	delete(h.sessions, sid)
+}
+
+func (h *MessageHandler) SnapshotSessionPids() map[string]int32 {
+	h.lock.Lock()
+	defer h.lock.Unlock()
+
+	out := make(map[string]int32, len(h.sessions))
+	for sid, session := range h.sessions {
+		out[sid] = session.Pid
+	}
+	return out
 }

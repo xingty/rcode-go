@@ -63,7 +63,7 @@ func (s *IPCClientSocket) Receive() ([]byte, error) {
 			return nil, errors.New("no data received")
 		}
 
-		index := bytes.Index(data, delimiter)
+		index := bytes.Index(data[:n], delimiter)
 		if index != -1 {
 			buf = append(buf, data[:index]...)
 			break

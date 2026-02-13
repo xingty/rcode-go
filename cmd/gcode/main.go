@@ -10,9 +10,10 @@ import (
 
 	"github.com/samber/lo"
 	"github.com/xingty/rcode-go/gcode/code"
+	"github.com/xingty/rcode-go/gcode/config"
 )
 
-var COMMANDS map[string]string = map[string]string{
+var IDE_BY_INVOKED = map[string]string{
 	"gcode":     "code",
 	"gcursor":   "cursor",
 	"gwindsurf": "windsurf",
@@ -20,59 +21,69 @@ var COMMANDS map[string]string = map[string]string{
 	"gtrae":     "trae",
 }
 
+var VALID_IDES = map[string]struct{}{
+	"code":     {},
+	"cursor":   {},
+	"windsurf": {},
+	"zed":      {},
+	"trae":     {},
+}
+
 var version = "0.0.10"
 
 func main() {
-	// config.InitGCodeEnv()
-	args := os.Args[1:]
-	if len(args) == 0 {
-		flag.Usage()
-		os.Exit(1)
-	}
+	invoked := filepath.Base(os.Args[0])
+	invoked = strings.TrimSuffix(invoked, ".exe")
 
-	binName, ok := COMMANDS[args[0]]
+	defaultIDE, ok := IDE_BY_INVOKED[invoked]
 	if !ok {
-		fmt.Printf("unknown command: %s\n", binName)
-		os.Exit(1)
+		defaultIDE = IDE_BY_INVOKED["gcode"]
 	}
 
 	flag.Usage = func() {
-		keys := strings.Join(lo.Keys(COMMANDS), " | ")
+		keys := strings.Join(lo.Keys(IDE_BY_INVOKED), " | ")
 
 		fmt.Println("Usage:")
-		fmt.Printf("Run on local:  [%s] <host> <dir> [options]\n", keys)
-		fmt.Printf("Run on remote: [%s] <dir> \n", keys)
-		fmt.Println("Just gcode 'file' like your VSCode 'code' .")
+		fmt.Printf("Run on local:  [%s] [--ide <ide>] <host> <dir> [options]\n", keys)
+		fmt.Printf("Run on remote: [%s] [--ide <ide>] <dir>\n", keys)
+		fmt.Println("Just gcode 'file' like your VSCode 'code'.")
 		fmt.Println("\nOptions:")
 		flag.PrintDefaults()
 	}
 
-	args = args[1:]
-	commands := make([]string, 0)
-	for index, arg := range args {
-		if strings.HasPrefix(arg, "-") {
-			args = args[index:]
-			break
-		}
-
-		commands = append(commands, arg)
-	}
-
-	isRemote, err := code.IsRemote(binName)
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-
 	v := flag.Bool("v", false, "Show version")
+	ide := flag.String("ide", "", "IDE to use: code | cursor | windsurf | zed | trae")
 	isLatest := flag.Bool("l", false, "if is_latest")
 	shortcutName := flag.String("sn", "latest", "open shortcut name")
 	openShortcut := flag.String("os", "", "open shortcut")
-	flag.CommandLine.Parse(args)
+	flag.CommandLine.Parse(os.Args[1:])
 
 	if *v {
 		fmt.Printf("gcode version: %s %s/%s\n", version, runtime.GOOS, runtime.GOARCH)
 		os.Exit(0)
+	}
+
+	commands := flag.Args()
+	if invoked == "gcode" && len(commands) > 0 {
+		if legacyIDE, ok := IDE_BY_INVOKED[commands[0]]; ok {
+			defaultIDE = legacyIDE
+			commands = commands[1:]
+		}
+	}
+
+	ideName := defaultIDE
+	if *ide != "" {
+		ideName = *ide
+	}
+	if _, ok := VALID_IDES[ideName]; !ok {
+		fmt.Printf("unsupported ide: %s\n", ideName)
+		os.Exit(1)
+	}
+
+	isRemote, err := code.IsRemote(ideName)
+	if err != nil {
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 
 	if isRemote {
@@ -83,9 +94,26 @@ func main() {
 
 		dirName := commands[0]
 		dirName, _ = filepath.Abs(dirName)
-		err := code.RunRemote(binName, dirName, code.MAX_IDLE_TIME)
+		err := code.RunRemote(ideName, dirName, code.MAX_IDLE_TIME)
 		if err != nil {
-			fmt.Printf("failed to run %s: %s\n", binName, err.Error())
+			fmt.Printf("failed to run %s: %s\n", ideName, err.Error())
+			os.Exit(1)
+		}
+
+		os.Exit(0)
+	}
+
+	if len(commands) == 1 {
+		path := commands[0]
+		if strings.HasPrefix(path, "~/") {
+			home, _ := os.UserHomeDir()
+			path = filepath.Join(home, path[2:])
+		}
+		path, _ = filepath.Abs(path)
+
+		err := code.OpenLocalPath(ideName, path)
+		if err != nil {
+			fmt.Printf("failed to open %s: %s\n", ideName, err.Error())
 			os.Exit(1)
 		}
 
@@ -96,9 +124,14 @@ func main() {
 		hostname := commands[0]
 		dirName := commands[1]
 
-		err := code.RunLocal(binName, hostname, dirName, *shortcutName)
+		if _, err := config.Setup(config.SetupOptions{EnsureConfigFile: true}); err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+
+		err := code.RunLocal(ideName, hostname, dirName, *shortcutName)
 		if err != nil {
-			fmt.Printf("failed to run %s: %s\n", binName, err.Error())
+			fmt.Printf("failed to run %s: %s\n", ideName, err.Error())
 			os.Exit(1)
 		}
 
@@ -106,9 +139,14 @@ func main() {
 	}
 
 	if *isLatest {
-		err := code.RunLatest(binName)
+		if _, err := config.Setup(config.SetupOptions{EnsureConfigFile: true}); err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+
+		err := code.RunLatest(ideName)
 		if err != nil {
-			fmt.Printf("failed to run %s: %s\n", binName, err.Error())
+			fmt.Printf("failed to run %s: %s\n", ideName, err.Error())
 			os.Exit(1)
 		}
 
@@ -116,9 +154,14 @@ func main() {
 	}
 
 	if *openShortcut != "" {
-		err := code.RunShortcut(binName, *shortcutName)
+		if _, err := config.Setup(config.SetupOptions{EnsureConfigFile: true}); err != nil {
+			fmt.Fprintln(os.Stderr, err.Error())
+			os.Exit(1)
+		}
+
+		err := code.RunShortcut(ideName, *shortcutName)
 		if err != nil {
-			fmt.Printf("failed to run %s: %s\n", binName, err.Error())
+			fmt.Printf("failed to run %s: %s\n", ideName, err.Error())
 			os.Exit(1)
 		}
 

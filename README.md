@@ -123,6 +123,8 @@ Once connected via GSSH, GCode allows you to open directories on the remote serv
   ```
   or Download [the powershell script](https://raw.githubusercontent.com/xingty/rcode-go/refs/heads/main/install.ps1) and execute it manually to install
 
+  On Windows, `gssh` is a script entrypoint that launches `ssh.exe` directly after preparing the session, so the long-running process is `ssh.exe` instead of `gssh`.
+
 ## Manual Download
 
 If you prefer to manually download the latest release package, you can do so from the GitHub Releases page:
@@ -158,6 +160,12 @@ make all
 
 This command will compile the project for Windows, Linux, and macOS (darwin) for the supported architectures (amd64, 386, and arm64).
 
+If you don't have `make` (common on Windows), you can build with Go directly:
+
+```bash
+go run ./tools/build -all
+```
+
 #### Building for a Specific Platform and Architecture
 
 If you need to build for a specific platform and architecture, you can use:
@@ -172,6 +180,12 @@ Replace `platform` and `arch` with your desired platform (`windows`, `linux`, `d
 # export CGO_ENABLED=0 disable CGO if you want
 
 make build-one PLATFORM=linux ARCH=amd64
+```
+
+Without `make`, use:
+
+```bash
+go run ./tools/build -platform=linux -arch=amd64
 ```
 
 #### Cleaning Build Artifacts

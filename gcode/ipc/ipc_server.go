@@ -50,7 +50,7 @@ func (s *IPCServerSocket) handleClient(conn net.Conn) error {
 			return errors.New("no data received")
 		}
 
-		index := bytes.Index(data, delimiter)
+		index := bytes.Index(data[:n], delimiter)
 		if index != -1 {
 			buf = append(buf, data[:index]...)
 			data, err := s.handler.HandleMessage(buf)
@@ -136,7 +136,7 @@ func (s *IPCServerSocket) handleConnection(listener net.Listener) {
 }
 
 func (s *IPCServerSocket) getSessions() ([]string, []string) {
-	curSessions := s.handler.sessions
+	curSessions := s.handler.SnapshotSessionPids()
 	activeSessions := make([]string, 0)
 	inactiveSessions := make([]string, 0)
 	if len(curSessions) == 0 {
@@ -149,8 +149,8 @@ func (s *IPCServerSocket) getSessions() ([]string, []string) {
 	}
 
 	pidSet := utils.NewSet(pids...)
-	for sid, session := range curSessions {
-		if pidSet.Has(session.Pid) {
+	for sid, pid := range curSessions {
+		if pidSet.Has(pid) {
 			activeSessions = append(activeSessions, sid)
 		} else {
 			inactiveSessions = append(inactiveSessions, sid)

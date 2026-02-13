@@ -19,11 +19,11 @@ func setupTestEnv(t *testing.T) (cleanupFunc func()) {
 	}
 
 	oldGCODE_HOME := config.GCODE_HOME
-	config.GCODE_HOME = tempDir
+	config.SetGCodeHome(tempDir)
 
 	return func() {
 		os.RemoveAll(tempDir)
-		config.GCODE_HOME = oldGCODE_HOME
+		config.SetGCodeHome(oldGCODE_HOME)
 	}
 }
 
@@ -81,7 +81,7 @@ func TestReadAndMergeConfig(t *testing.T) {
 	}
 
 	testContent := strings.Join(testConfigs, "\n") + "\n"
-	configFile := filepath.Join(config.GCODE_HOME, "gcode.json")
+	configFile := filepath.Join(config.GCODE_HOME, "gcode")
 	if err := os.WriteFile(configFile, []byte(testContent), 0644); err != nil {
 		t.Fatalf("Failed to write test config file: %v", err)
 	}
@@ -102,7 +102,8 @@ func TestReadAndMergeConfig(t *testing.T) {
 		t.Fatalf("Failed to read config file: %v", err)
 	}
 
-	if len(strings.Split(string(content), "\n")) != 3 {
-		t.Fatalf("ReadAndMergeConfig(latest) = %q, want %q", len(strings.Split(string(content), "\n")), 3)
+	lines := strings.Split(strings.TrimSpace(string(content)), "\n")
+	if got, want := len(lines), 3; got != want {
+		t.Fatalf("len(lines)=%d want=%d content=%q", got, want, string(content))
 	}
 }

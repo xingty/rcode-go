@@ -2,6 +2,7 @@ package ssh
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"strconv"
@@ -13,48 +14,61 @@ import (
 	"github.com/xingty/rcode-go/pkg/models"
 )
 
-func connect2IPCServer(ipc_host string, ipc_port int) *ipc.IPCClientSocket {
-	addr := ipc_host + ":" + strconv.Itoa(ipc_port)
+const (
+	connectRetryDelay = 100 * time.Millisecond
+	connectMaxRetries = 10
+)
+
+var errHostNotFound = errors.New("host not found")
+
+func connectToIPCServer(ipcHost string, ipcPort int) (*ipc.IPCClientSocket, error) {
+	addr := ipcHost + ":" + strconv.Itoa(ipcPort)
+
 	sock := ipc.NewIPCClientSocket(addr)
-	err := sock.Connect("tcp")
-	if err == nil {
-		return sock
+	if err := sock.Connect("tcp"); err == nil {
+		return sock, nil
 	}
 
-	fmt.Println("starting ipc server...")
-	args := []string{"-host", ipc_host, "-port", strconv.Itoa(ipc_port)}
-	err = ipc.StartIPCServer("gssh-ipc", args)
-	if err != nil {
-		panic(err)
+	fmt.Fprintln(os.Stderr, "starting ipc server...")
+	args := []string{"-host", ipcHost, "-port", strconv.Itoa(ipcPort)}
+	if err := ipc.StartIPCServer("gssh-ipc", args); err != nil {
+		return nil, err
 	}
-	time.Sleep(100 * time.Millisecond)
 
-	for i := 1; i < 10; i++ {
+	var lastErr error
+	for i := 0; i < connectMaxRetries; i++ {
+		time.Sleep(connectRetryDelay)
 		sock = ipc.NewIPCClientSocket(addr)
-		err := sock.Connect("tcp")
-		if err == nil {
-			break
+		if err := sock.Connect("tcp"); err == nil {
+			return sock, nil
+		} else {
+			lastErr = err
 		}
-
-		time.Sleep(100 * time.Millisecond)
 	}
 
-	return sock
+	if lastErr == nil {
+		lastErr = errors.New("unknown connection failure")
+	}
+	return nil, fmt.Errorf("failed to connect to ipc server at %s: %w", addr, lastErr)
 }
 
-func createSession(sock *ipc.IPCClientSocket, hostname string) models.SessionData {
+func createSession(sock *ipc.IPCClientSocket, hostname string, ownerPID int32) (models.SessionData, error) {
+	if ownerPID <= 0 {
+		ownerPID = int32(os.Getpid())
+	}
+
 	data, err := os.ReadFile(config.RSSH_KEY_FILE)
 	if err != nil {
 		data, err = os.ReadFile(config.GCODE_KEY_FILE)
 		if err != nil {
-			panic(err)
+			return models.SessionData{}, err
 		}
 	}
 
 	session := models.SessionPayload[models.SessionParams]{
 		Method: "new_session",
 		Params: models.SessionParams{
-			Pid:      int32(os.Getpid()),
+			Pid:      ownerPID,
 			Hostname: hostname,
 			Keyfile:  string(data),
 		},
@@ -62,84 +76,207 @@ func createSession(sock *ipc.IPCClientSocket, hostname string) models.SessionDat
 
 	jsondata, err := json.Marshal(session)
 	if err != nil {
-		panic(err)
+		return models.SessionData{}, err
 	}
 
-	err = sock.Send(jsondata)
-	if err != nil {
-		panic(err)
+	if err := sock.Send(jsondata); err != nil {
+		return models.SessionData{}, err
 	}
 
 	response, err := sock.Receive()
 	if err != nil {
-		panic(err)
+		return models.SessionData{}, err
 	}
 
 	res := models.ResponsePayload[models.SessionData]{}
-	json.Unmarshal(response, &res)
+	if err := json.Unmarshal(response, &res); err != nil {
+		return models.SessionData{}, err
+	}
+	if res.Code != 0 {
+		if res.Message == "" {
+			res.Message = "unknown ipc error"
+		}
+		return models.SessionData{}, errors.New(res.Message)
+	}
 
-	return res.Data
+	return res.Data, nil
 }
 
-func findHostPos(args []string) int {
-	for i, arg := range args {
-		if !strings.HasPrefix(arg, "-") {
-			return i
-		}
-	}
-
-	return -1
+type sshInvocation struct {
+	destinationIndex int
+	hasPseudoTTY     bool
+	disableReason    string // non-empty means "fallback to plain ssh"
 }
 
-func createSSHArgs(
-	host string,
-	port int,
-	ssh_args []string) []string {
+func analyzeSSHArgs(args []string) (sshInvocation, error) {
+	inv := sshInvocation{destinationIndex: -1}
 
-	pseudo := false
-	for i := range ssh_args {
-		param := ssh_args[i]
-		if param == "-R" || param == "-T" {
-			fmt.Println("Warning: gssh is disabled because of -R or -T")
-			fmt.Println("ssh is used instead")
-			return ssh_args
+	endOfOptions := false
+	skipNext := false
+
+	for i := 0; i < len(args); i++ {
+		arg := args[i]
+
+		if skipNext {
+			skipNext = false
+			continue
 		}
 
-		if param == "-t" {
-			pseudo = true
+		if endOfOptions || arg == "" || arg == "-" || !strings.HasPrefix(arg, "-") {
+			inv.destinationIndex = i
+			break
+		}
+
+		if arg == "--" {
+			endOfOptions = true
+			continue
+		}
+
+		// ssh doesn't really use long options; treat unknown `--foo` as an option with no value.
+		if strings.HasPrefix(arg, "--") {
+			continue
+		}
+
+		hasTTY, forbidden, needsValue := scanShortOptionToken(arg)
+		if hasTTY {
+			inv.hasPseudoTTY = true
+		}
+		if forbidden != "" && inv.disableReason == "" {
+			inv.disableReason = forbidden
+		}
+		if needsValue {
+			skipNext = true
 		}
 	}
 
-	index := findHostPos(ssh_args)
-	if index == -1 {
-		fmt.Println("Error: host not found")
-		os.Exit(1)
+	if inv.destinationIndex == -1 {
+		if inv.disableReason != "" {
+			return inv, nil
+		}
+		return inv, errHostNotFound
 	}
 
-	pre := ssh_args[:index]
-	post := ssh_args[index:]
-	hostname := ssh_args[index]
-
-	socks := connect2IPCServer(host, port)
-	s := createSession(socks, hostname)
-	socks.Close()
-
-	buf := make([]string, 0)
-	buf = append(buf, pre...)
-	if !pseudo {
-		buf = append(buf, "-t")
+	if inv.disableReason == "" && inv.destinationIndex+1 < len(args) {
+		inv.disableReason = "remote command"
 	}
 
-	sock := fmt.Sprintf("/tmp/rssh-ipc-%s.sock", s.Sid)
-	tunnel := fmt.Sprintf("%s:%s:%d", sock, host, port)
-	buf = append(buf, "-R", tunnel)
-	buf = append(buf, post...)
+	return inv, nil
+}
+
+func scanShortOptionToken(token string) (hasTTY bool, forbidden string, needsValue bool) {
+	if !strings.HasPrefix(token, "-") || token == "-" || token == "--" {
+		return false, "", false
+	}
+
+	opts := token[1:]
+	for i := 0; i < len(opts); i++ {
+		c := opts[i]
+		switch c {
+		case 'G':
+			// `ssh -G host` prints configuration and exits without connecting.
+			// Avoid creating a session for it.
+			return hasTTY, "-G", false
+		case 'V':
+			// `ssh -V` prints version and exits.
+			return hasTTY, "-V", false
+		case 'Q':
+			// `ssh -Q` queries algorithms and exits.
+			return hasTTY, "-Q", true
+		case 'h', '?':
+			// `ssh -h` / `ssh -?` prints usage and exits.
+			return hasTTY, "-h", false
+		case 't':
+			hasTTY = true
+		case 'T':
+			return hasTTY, "-T", false
+		case 'R':
+			return hasTTY, "-R", false
+		default:
+			if !shortOptionRequiresValue(c) {
+				continue
+			}
+
+			// Option takes a value: if attached (`-p22`, `-oFoo=bar`, `-i/path`) we don't need to
+			// consume the next arg; otherwise we do.
+			if i < len(opts)-1 {
+				return hasTTY, "", false
+			}
+			return hasTTY, "", true
+		}
+	}
+
+	return hasTTY, "", false
+}
+
+func shortOptionRequiresValue(opt byte) bool {
+	switch opt {
+	case 'b', 'c', 'D', 'E', 'e', 'F', 'I', 'i', 'J', 'L', 'l', 'm', 'O', 'o', 'p', 'Q', 'S', 'W', 'w':
+		return true
+	default:
+		return false
+	}
+}
+
+func BuildSSHArgs(ipcHost string, ipcPort int, ownerPID int32, sshArgs []string) ([]string, error) {
+	inv, err := analyzeSSHArgs(sshArgs)
+	if err != nil {
+		if errors.Is(err, errHostNotFound) {
+			// Some ssh invocations (e.g. `ssh -h`, `ssh -V`) are meaningful without a hostname.
+			// In those cases we should not create a session; just run plain ssh.
+			return sshArgs, nil
+		}
+		return nil, err
+	}
+
+	if inv.disableReason != "" {
+		switch inv.disableReason {
+		case "-R", "-T":
+			fmt.Fprintf(os.Stderr, "Warning: gssh is disabled because of %s; using ssh instead\n", inv.disableReason)
+		case "remote command":
+			fmt.Fprintln(os.Stderr, "Warning: gssh is disabled because remote command is provided; using ssh instead")
+		default:
+			fmt.Fprintf(os.Stderr, "Warning: gssh is disabled (%s); using ssh instead\n", inv.disableReason)
+		}
+		return sshArgs, nil
+	}
+
+	pre := sshArgs[:inv.destinationIndex]
+	post := sshArgs[inv.destinationIndex:]
+	hostname := sshArgs[inv.destinationIndex]
+
+	sock, err := connectToIPCServer(ipcHost, ipcPort)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = sock.Close() }()
+
+	s, err := createSession(sock, hostname, ownerPID)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]string, 0, len(sshArgs)+6)
+	out = append(out, pre...)
+	if !inv.hasPseudoTTY {
+		out = append(out, "-t")
+	}
+
+	remoteSock := fmt.Sprintf("/tmp/rssh-ipc-%s.sock", s.Sid)
+	tunnel := fmt.Sprintf("%s:%s:%d", remoteSock, ipcHost, ipcPort)
+	out = append(out, "-R", tunnel)
+	out = append(out, post...)
+
 	env := fmt.Sprintf("export RSSH_SID=%s; export RSSH_SKEY=%s; exec $SHELL", s.Sid, s.Key)
+	out = append(out, env)
 
-	return append(buf, env)
+	return out, nil
 }
 
-func Run(ipc_host string, ipc_port int, ssh_args []string) {
-	newArgs := createSSHArgs(ipc_host, ipc_port, ssh_args)
-	ipc.StartSSHClient(newArgs)
+func Run(ipcHost string, ipcPort int, sshArgs []string) int {
+	newArgs, err := BuildSSHArgs(ipcHost, ipcPort, int32(os.Getpid()), sshArgs)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		return 255
+	}
+	return ipc.StartSSHClient(newArgs)
 }
