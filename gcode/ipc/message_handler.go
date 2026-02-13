@@ -156,6 +156,7 @@ func (h *MessageHandler) OpenIDE(params *models.OpenIDEParams) (string, error) {
 		cmd = exec.Command(binName, uriType, ssh_remote)
 	}
 
+	configureNoConsoleWindow(cmd)
 	return "", cmd.Run()
 }
 

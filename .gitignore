@@ -15,3 +15,5 @@ dist
 test.go
 .tmp-home
 .gocache
+*.test
+*.test.exe
