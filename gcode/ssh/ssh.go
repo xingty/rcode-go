@@ -91,6 +91,14 @@ func findHostPos(args []string) int {
 	return -1
 }
 
+func remoteShellCommand(s models.SessionData) string {
+	return fmt.Sprintf(
+		"export RSSH_SID=%s; export RSSH_SKEY=%s; exec \"$SHELL\" -l",
+		s.Sid,
+		s.Key,
+	)
+}
+
 func createSSHArgs(
 	host string,
 	port int,
@@ -134,7 +142,7 @@ func createSSHArgs(
 	tunnel := fmt.Sprintf("%s:%s:%d", sock, host, port)
 	buf = append(buf, "-R", tunnel)
 	buf = append(buf, post...)
-	env := fmt.Sprintf("export RSSH_SID=%s; export RSSH_SKEY=%s; exec $SHELL", s.Sid, s.Key)
+	env := remoteShellCommand(s)
 
 	return append(buf, env)
 }
